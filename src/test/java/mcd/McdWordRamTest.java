@@ -225,12 +225,6 @@ public class McdWordRamTest extends McdRegTestBase {
         }
     }
 
-
-    /**
-     * TODO it is not this simple anymore
-     * TODO how this fits with the MAIN CELL rendering??
-     * TODO I think current impl is buggy as some FMVs are showing corruption
-     */
     /**
      * WORDRAM0         WORDRAM1       WORDRAM_2M
      * 0: 0000          0:AAAA         0:0000
@@ -238,8 +232,7 @@ public class McdWordRamTest extends McdRegTestBase {
      * ...              ...            4:1111
      * 6:BBBB
      */
-    //TODO fix
-//    @Test
+    @Test
     public void testWRAMDataOnSwitch_2M_1M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;

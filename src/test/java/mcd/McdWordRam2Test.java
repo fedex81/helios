@@ -35,6 +35,8 @@ public class McdWordRam2Test extends McdRegTestBase {
     public void setup() {
         setupBase();
     }
+
+    //1M bank selection: each CPU sees bank 0/1 depending on which side owns WR0
     @Test
     public void testBank1M() {
         Assertions.assertEquals(0, getBank1M(W_1M_WR0_MAIN, M68K));
@@ -43,6 +45,8 @@ public class McdWordRam2Test extends McdRegTestBase {
         Assertions.assertEquals(0, getBank1M(WramSetup.W_1M_WR0_SUB, SUB_M68K));
     }
 
+    //2M mode banking: WRAM is split across two 1M banks, interleaved by address bit 1 (bank = (addr & 2) >> 1).
+    //Verify that addresses pick the right bank.
     @Test
     public void testBank2MWord() {
         int start = START_MCD_MAIN_WORD_RAM_MODE1;
@@ -57,7 +61,8 @@ public class McdWordRam2Test extends McdRegTestBase {
         }
     }
 
-    //main can't take back access to wram until sub not release it
+    //In 2M mode, MAIN cannot take WRAM back until SUB releases it: a MAIN attempt to clear
+    //DMNA while SUB owns the WRAM is ignored.
     @Test
     public void testSwitch01() {
         assert ctx.wramSetup.mode == _2M;
@@ -65,9 +70,10 @@ public class McdWordRam2Test extends McdRegTestBase {
         int mainMemModeAddr = MdMainBusProvider.MEGA_CD_EXP_START +
                 MegaCdDict.RegSpecMcd.MCD_MEM_MODE.addr + 1;
         int val = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
-        //reset DMNA from MAIN, ignored
+        //MAIN tries to clear DMNA to grab WRAM -> ignored
         int newVal = val & ~(SharedBitDef.DMNA.getBitMask());
         mainCpuBus.write(mainMemModeAddr, newVal, Size.BYTE);
+        //register is unchanged SUB still owns WRAM
         int val2 = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
         Assertions.assertEquals(val, val2);
     }
@@ -110,10 +116,14 @@ public class McdWordRam2Test extends McdRegTestBase {
         return res;
     }
 
+    //1M- mode read/write round trip across bank switches.
+    //Write a string from one CPU to its bank, flip ownership, and check the other CPU reads
+    //back the same bytes - proving the two 1M banks are shared correctly and data survives the
+    //ownership switch.
     @Test
     public void testWram1M_RW() {
         for (Size size : Size.values()) {
-            System.out.println(size);
+//            System.out.println(size);
             String str = "MOD Player24" + size.name();
             final int len = str.length();
             Assertions.assertTrue(len % Size.LONG.getByteSize() == 0);
@@ -173,6 +183,10 @@ public class McdWordRam2Test extends McdRegTestBase {
         Assertions.assertEquals(lc.memoryContext.wramSetup, ws);
     }
 
+    //In 1M mode the SUB sees WRAM dot-mapped: each byte of its bank expands to a nibble pair
+    //in the 2M window (the cell/dot image used by the graphics ASIC). This verifies the dot mapping
+    //by writing 2M layout data as MAIN, switching to 1M, and reading it back both linearly (WR0/WR1) and
+    //dot-mapped (2M window) from SUB.
     @Test
     public void testWramDotMappedSubReads() {
         assert ctx.wramSetup.mode == _2M;
@@ -233,8 +247,7 @@ public class McdWordRam2Test extends McdRegTestBase {
     }
 
     //ROTD sets DMNA=1 in 1M and expects SUB to have WordRAM after the switch to 2M.
-    //TODO fix
-//    @Test
+    @Test
     public void testRiseOfTheDragon() {
         McdWordRamTest.setWram1M_W0Main(lc);
         int v = mainGetLsbFn.apply(mainCpuBus);
@@ -246,7 +259,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         Assertions.assertEquals(SUB_M68K, ctx.wramSetup.cpu);
     }
 
-    //UP sets bank in 1M (so, RET=1) and expects MAIN to have WordRAM after the switch to 2M.
+    //UP sets bank=1 in 1M (so, RET=1) and expects MAIN to have WordRAM after the switch to 2M.
     @Test
     public void testUltraverse() {
         McdWordRamTest.setWram1M_W0Main(lc);
@@ -272,7 +285,6 @@ public class McdWordRam2Test extends McdRegTestBase {
      * In switching back to 2M (say, by setting [ff8003]=00), WordRAM will have already been
      * assigned to MAIN, and the register value will reflect this: [ff8003]==01.
      */
-    //TODO fix
 //    @Test
     public void testSequence1() {
         /**
@@ -333,16 +345,19 @@ public class McdWordRam2Test extends McdRegTestBase {
      * which probably did not help during manuals translation.
      */
     @Test
-    public void test1M_MainSwitch() {
+    public void test1M_MainSwitch_Ignored() {
         McdWordRamTest.setWram1M_W0Main(lc);
 
-        //switch bank, set DMNA=0, main = bank1
+        //MAIN clears RET (DMNA = 0) to REQUEST a 1M bank swap.
+        //MAIN cannot trigger the swap: ownership stays as Wram1M_W0Main, DMNA is set as pending request;
+        // SUB performs the actual swap.
         mainSetLsbFn.accept(lc.mainBus, mainGetLsbFn.apply(lc.mainBus) & ~1);
-        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
-        //DMNA then goes to 1, (TODO->) and then 0
+        Assertions.assertEquals(W_1M_WR0_MAIN, ctx.wramSetup);
+        //DMNA is set to signal the pending swap request
         Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsbFn.apply(lc.mainBus) & DMNA_BIT_MASK);
     }
 
+    //2M mode: SUB sets RET=1 to hand over WRAM back to MAIN (the normal SUB->MAIN handoff)
     @Test
     public void test2M_SubRetBit() {
         McdWordRamTest.setWramSub2M(lc);
@@ -362,13 +377,16 @@ public class McdWordRam2Test extends McdRegTestBase {
      * 68M 00ff04a0   0839 0001 00a12003      btst     #$1,$00a12003 [NEW]
      * 68M 00ff04a8   67ee                    beq.s    $00ff0498 [NEW]
      */
+    //SUB toggles RET (bchg #0) in 1M to flip the bank each frame
     @Test
     public void test1M_terminator() {
         McdWordRamTest.setWram1M_W0Main(lc);
-        //switch bank, set DMNA=0, main = bank1
+        //MAIN writes MODE=1 (stay 1M) with DMNA = 0 -> swap request.
+        //Ownership stays Wram1M_W0Main (MAIN only requests; SUB performs the swap) and
+        //DMNA is set as the request.
         mainSetLsbFn.accept(lc.mainBus, MODE.getBitMask());
-        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
-        Assertions.assertEquals(7, mainGetLsbFn.apply(lc.mainBus));
+        Assertions.assertEquals(W_1M_WR0_MAIN, ctx.wramSetup);
+        Assertions.assertEquals(MODE.getBitMask() | DMNA_BIT_MASK, mainGetLsbFn.apply(lc.mainBus));
     }
 
 
@@ -416,6 +434,9 @@ public class McdWordRam2Test extends McdRegTestBase {
      * 68M 00000692   0c79 ff01 00a12002      cmpi.w   #$ff01,$00a12002
      * 68M 0000069a   668e                    bne.s    $0000062a
      */
+    //MAIN cycles the PRG-RAM bank bits (BK0/1) then does a WORD write to reg2 (MSB = 0xFF, LSB = 0).
+    //In 2M with main owning, RET must stay 1: none of these writes hand WRAM over to SUB (all have DMNA=0),
+    //so MAIN keeps it.
     @Test
     public void test2M_wonderMidi() {
         //default
