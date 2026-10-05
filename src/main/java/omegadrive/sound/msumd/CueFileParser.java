@@ -63,7 +63,7 @@ public class CueFileParser {
     }
 
     public static int msfToSector(int m, int s, int f) {
-        assert s <= 60 && f <= 75 && m <= 99;
+        assert s <= 60 && f <= 75 && m <= 99 : m + ":" + s + ":" + f;
         return (m * 60 + s) * 75 + f;
     }
 

@@ -1,5 +1,5 @@
 Lawnmower man EU
-- thinks it's an Audio Disc, if you play track#2 gets to the end and crashes
+- thinks it's an Audio Disc, mastering issue
 Flashback DEMO EU
 - Odd PCM DMA length: 2047, addr: 0 (ONCE)
 
@@ -8,6 +8,17 @@ Batman Returns EU
 
 Cosmic JP
 - audio issue with pops, clipping problem? PCM
+
+not working
+Aisle Lord JP - freeze after BIOS
+Annette Futatabi JP - freeze after BIOS
+Arslan Senki JP - 1st screen after BIOS
+Battlecorps JP
+Cosmic Fantasy JP
+Daihou.. JP
+Devastator
+Earnest Evans
+Jangou world cup
 
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
@@ -30,70 +41,26 @@ Cosmic JP
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
-
-
-2026-02-27 23:49:43.221 ERROR [cycle-Sengoku Denshou (Japan).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
-    	at omegadrive.util.Util.readBufferLong(Util.java:234)
-    	at omegadrive.util.BufferUtil.readBuffer(BufferUtil.java:140)
-    	at mcd.bus.MegaCdMainCpuBus.read(MegaCdMainCpuBus.java:161)
-    	at omegadrive.cpu.m68k.MC68000AddressSpace.readLong(MC68000AddressSpace.java:65)
-    	at m68k.cpu.CpuCore.readMemoryLong(CpuCore.java:942)
-    	at m68k.cpu.operand.Operands$AddressRegisterWithDisplacementOperand.getLong(Operands.java:457)
-    	at m68k.cpu.instructions.MOVE.move_long(MOVE.java:167)
-    	at m68k.cpu.instructions.MOVE$3.execute(MOVE.java:113)
-    	at m68k.cpu.MC68000.executePrefetch(MC68000.java:72)
-    	at m68k.cpu.MC68000.execute(MC68000.java:58)
-    	at omegadrive.cpu.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:81)
-    	at omegadrive.system.Megadrive.run68k(Megadrive.java:162)
-    	at mcd.MegaCd.loop(MegaCd.java:119)
-    	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:378)
-    	at omegadrive.util.Util.lambda$wrapRunnableEx$4(Util.java:454)
-    	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
-    	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
-    	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-    	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-    	at java.base/java.lang.Thread.run(Thread.java:1583)
-
-58: Bari-Arm (Japan).cue
-2026-02-28 17:33:50.593 ERROR [cycle-Who Shot Johnny Rock (USA).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
 2026-02-28 16:14:46.140 ERROR [cycle-Mary Shelley's Frankenstein (USA).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
-java.lang.AssertionError
-	at mcd.cdd.CddImpl.inTrack(CddImpl.java:753)
-	at mcd.cdd.CddImpl.advance(CddImpl.java:727)
-	at mcd.cdd.CddImpl.stepCdda(CddImpl.java:716)
-	at mcd.bus.MegaCdSubCpuBus.step(MegaCdSubCpuBus.java:498)
-	at mcd.McdDeviceHelper$McdLaunchContext.stepDevices(McdDeviceHelper.java:83)
-	at mcd.MegaCd.runSub68k(MegaCd.java:143)
-	at mcd.MegaCd.loop(MegaCd.java:120)
-	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:378)
-	at omegadrive.util.Util.lambda$wrapRunnableEx$4(Util.java:454)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
-	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-	at java.base/java.lang.Thread.run(Thread.java:1583)
-
-2026-02-28 15:28:12.970 ERROR [cycle-Panic! (USA) (RE).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
-    115: Switch (Japan).cue
-    java.lang.AssertionError
-    	at mcd.bus.MegaCdSubCpuBus.write(MegaCdSubCpuBus.java:205)
-    	at omegadrive.cpu.m68k.MC68000AddressSpace.writeByte(MC68000AddressSpace.java:70)
-    	at m68k.cpu.CpuCore.writeMemoryByte(CpuCore.java:946)
-    	at m68k.cpu.operand.Operands$AddressRegisterPostIncOperand.setByte(Operands.java:316)
-    	at m68k.cpu.instructions.MOVE.move_byte(MOVE.java:151)
-    	at m68k.cpu.instructions.MOVE$1.execute(MOVE.java:83)
-    	at m68k.cpu.MC68000.executePrefetch(MC68000.java:72)
-    	at m68k.cpu.MC68000.execute(MC68000.java:58)
-    	at omegadrive.cpu.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:81)
-    	at mcd.MegaCd.runSub68k(MegaCd.java:137)
-    	at mcd.MegaCd.loop(MegaCd.java:120)
-    	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:378)
-    	at omegadrive.util.Util.lambda$wrapRunnableEx$4(Util.java:454)
-    	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
-    	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
-    	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-    	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-    	at java.base/java.lang.Thread.run(Thread.java:1583)
+java.lang.AssertionError: 121:56:8
+	at omegadrive.sound.msumd.CueFileParser.msfToSector(CueFileParser.java:66)
+	at omegadrive.sound.msumd.CueFileParser.msfToSectorAdjustPregap(CueFileParser.java:71)
+	at omegadrive.sound.msumd.CueFileParser.msfToSectorAdjustPregap(CueFileParser.java:75)
+	at mcd.cdd.CddImpl.cdd_process(CddImpl.java:370)
+	at mcd.cdd.CddImpl.writeCommByte(CddImpl.java:149)
+	at mcd.cdd.CddImpl.write(CddImpl.java:113)
+	at mcd.bus.MegaCdSubCpuBus.handleMegaCdExpWriteInternal(MegaCdSubCpuBus.java:262)
+	at mcd.bus.MegaCdSubCpuBus.handleMegaCdExpWrite(MegaCdSubCpuBus.java:240)
+	at mcd.bus.MegaCdSubCpuBus.write(MegaCdSubCpuBus.java:181)
+	at omegadrive.cpu.m68k.MC68000AddressSpace.writeWord(MC68000AddressSpace.java:75)
+	at m68k.cpu.CpuCore.writeMemoryWord(CpuCore.java:952)
+	at m68k.cpu.operand.Operands$AddressRegisterPostIncOperand.setWord(Operands.java:321)
+	at m68k.cpu.instructions.MOVE.move_word(MOVE.java:160)
+	at m68k.cpu.instructions.MOVE$2.execute(MOVE.java:98)
+	at m68k.cpu.MC68000.executePrefetch(MC68000.java:72)
+	at m68k.cpu.MC68000.execute(MC68000.java:58)
+	at omegadrive.cpu.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:91)
+	at mcd.MegaCd.runSub68k(MegaCd.java:148)
 
 TODO
 https://github.com/ekeeke/Genesis-Plus-GX/issues/533
