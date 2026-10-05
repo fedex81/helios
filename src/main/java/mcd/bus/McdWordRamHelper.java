@@ -35,7 +35,7 @@ public class McdWordRamHelper {
 
     public enum UpdateImpl {BLASTEM, GPGX}
 
-    private UpdateImpl updateImpl = UpdateImpl.BLASTEM;
+    private UpdateImpl updateImpl = UpdateImpl.GPGX;
     private final MegaCdMemoryContext memoryContext;
     private final byte[][] wordRam01;
 
@@ -221,8 +221,111 @@ public class McdWordRamHelper {
     }
 
     private WramSetup updateGpgx(CpuDeviceAccess c, int reg2) {
-        return null;
+        int data = reg2 & 0xFF;
+        int cur = readBuffer(memoryContext.getGateSysRegs(c), MCD_MEM_MODE.addr + 1, Size.BYTE);
+        int reg1 = cur;
+        WramSetup prev = memoryContext.wramSetup;
+        if (c == M68K) {
+            if ((reg1 & 4) != 0) {
+                //1M mode
+                if ((data & 2) != 0) {
+                    gpgxDmna = 1; //writing to DMNA in 1M -> returns WRAM to SUB in 2M
+                } else {
+                    data |= 0x02; //writing 0 to DMNA in 1M actually sets DMNA
+                    reg1 = (reg1 & ~0xc2) | (data & 0xc2); //update BK0-` & DMNA
+                }
+            } else {
+                //2M mode
+                if ((data & 2) != 0) { //writing 0 to DMNA in 2M does nothing
+                    gpgxDmna = 1; //WRAM to SUB
+                    reg1 = (reg1 & ~0xc3) | (data & 0xc2); //clear RET, update BK0-1, DMNA
+                } else {
+                    reg1 = (reg1 & ~0xc0) | (data & 0xc0); //update BK0-1 only
+                }
+            }
+        } else {
+            if (((data ^ reg1) & 5) != 0) { //MODE or RET changed
+                if ((data & 4) != 0) {
+                    //1M mode or 2M->1M switch
+                    if ((data & 1) != 0) {
+                        gpgxDmna = 0; //RET=1 in 1M returns WRAM to MAIN in 2M
+                    }
+                    reg1 = (reg1 & ~0x1f) | (data & 0x1d); //PM/MODE/RET, mask DMNA
+                    finishGpgx(c, prev, reg1);
+                    return memoryContext.wramSetup;
+                } else {
+                    //1M -> 2M switch (MODE just cleared) or 2M
+                    if ((reg1 & 4) != 0) {
+                        //1M->2M
+                        data |= (~gpgxDmna & 1); //RET bit set during 1M mode?
+                        if ((data & 1) == 0) {
+                            data |= 2; //set DMNA
+                            reg1 = (reg1 & ~0x1f) | (data & 0x1f);
+                            finishGpgx(c, prev, reg1);
+                            return memoryContext.wramSetup;
+                        }
+                    }
+                    //RET set in 2m Mode
+                    if ((data & 1) != 0) {
+                        gpgxDmna = 0; //WRAM to main
+                        reg1 = (reg1 & ~0x1f) | (data & 0x1d); //clear DMNA
+                        finishGpgx(c, prev, reg1);
+                        return memoryContext.wramSetup;
+                    }
+                }
+            }
+            //update PM0-1, MODE bits only
+            reg1 = (reg1 & ~0x1c) | (data & 0x1c);
+        }
+        finishGpgx(c, prev, reg1);
+        return memoryContext.wramSetup;
     }
+
+    private void finishGpgx(CpuDeviceAccess c, WramSetup prev, int reg1) {
+        //write the full reg3 low byte to both CPU buffers
+        setSharedBitBothCpu(memoryContext, RET, reg1);
+        setSharedBitBothCpu(memoryContext, DMNA, reg1);
+        setSharedBitBothCpu(memoryContext, MODE, reg1);
+        setBitDefInternal(memoryContext, SUB_M68K, PM0, reg1);
+        setBitDefInternal(memoryContext, SUB_M68K, PM1, reg1);
+        setBitDefInternal(memoryContext, M68K, BK0, reg1);
+        setBitDefInternal(memoryContext, M68K, BK1, reg1);
+
+        //deriveWramSetupGpgx
+        if ((reg1 & MODE.getBitMask()) != 0) {
+            memoryContext.wramSetup = (reg1 & RET.getBitMask()) != 0 ? W_1M_WR0_SUB : W_1M_WR0_MAIN;
+        } else {
+            memoryContext.wramSetup = gpgxDmna == 0 ? W_2M_MAIN : W_2M_SUB;
+        }
+        if (prev != memoryContext.wramSetup) {
+            LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, memoryContext.wramSetup);
+        }
+    }
+
+
+//    private void writeRegLowByteGpgx(int reg1){
+//        setSharedBitBothCpu(memoryContext, RET, reg1);
+//        setSharedBitBothCpu(memoryContext, DMNA, reg1);
+//        setSharedBitBothCpu(memoryContext, MODE, reg1);
+//        setBitDefInternal(memoryContext, SUB_M68K, PM0, reg1);
+//        setBitDefInternal(memoryContext, SUB_M68K, PM1, reg1);
+//        setBitDefInternal(memoryContext, M68K, BK0, reg1);
+//        setBitDefInternal(memoryContext, M68K, BK1, reg1);
+//    }
+//
+//    private void deriveWramSetupGpgx(int reg1){
+//        if((reg1 & MODE.getBitMask()) != 0){
+//            memoryContext.wramSetup = (reg1 & RET.getBitMask()) != 0 ? W_1M_WR0_SUB : W_1M_WR0_MAIN;
+//        } else {
+//            memoryContext.wramSetup = gpgxDmna == 0 ? W_2M_MAIN : W_2M_SUB;
+//        }
+//    }
+//
+//    private void finishGpgx(CpuDeviceAccess c, WramSetup prev){
+//        if(prev != memoryContext.wramSetup){
+//            LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, memoryContext.wramSetup);
+//        }
+//    }
 
     private void updateWriteProtect(int wpVal) {
         writeBufferRaw(memoryContext.getGateSysRegs(M68K), MCD_MEM_MODE.addr, wpVal, Size.BYTE);
