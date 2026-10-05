@@ -130,6 +130,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     public int read(int address, Size size) {
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
+        MdRuntimeData.addCpuDelayExt(1);
         address &= MCD_SUB_ADDRESS_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
@@ -161,6 +162,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
         address &= MCD_SUB_ADDRESS_MASK;
+        MdRuntimeData.addCpuDelayExt(1);
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 if (memCtx.wramSetup.cpu == SUB_M68K) {

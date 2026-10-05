@@ -123,6 +123,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     public int read(int address, Size size) {
         assert assertCheckBusOp(address, size);
         assert MdRuntimeData.getAccessTypeExt() == M68K || MdRuntimeData.getAccessTypeExt() == Z80;
+        MdRuntimeData.addCpuDelayExt(1);
         address &= MD_PC_MASK;
         if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             if (!enableMCDBus) {
@@ -166,6 +167,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         assert MdRuntimeData.getAccessTypeExt() == M68K || MdRuntimeData.getAccessTypeExt() == Z80;
         assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
+        MdRuntimeData.addCpuDelayExt(1);
         if (enableMCDBus) {
             if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
                 handleMegaCdExpWrite(address & MCD_GATE_REGS_MASK, data, size);

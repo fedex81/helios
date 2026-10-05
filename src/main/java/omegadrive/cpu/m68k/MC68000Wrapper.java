@@ -148,8 +148,8 @@ public class MC68000Wrapper implements M68kProvider {
     public void reset() {
         CpuDeviceAccess prev = MdRuntimeData.setAccessTypeExt(cpu);
         m68k.reset();
+        loopDelay = MdRuntimeData.resetCpuDelayExt();
         MdRuntimeData.setAccessTypeExt(prev);
-        loopDelay = 0;
     }
 
     //X-men uses it

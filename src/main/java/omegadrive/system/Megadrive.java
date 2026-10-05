@@ -153,25 +153,27 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     }
 
     protected final void run68k() {
+        assert MdRuntimeData.getCpuDelayExt(M68K) == 0;
         if (cycleCounter == next68kCycle) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
             int cycleDelay = 1;
             MdRuntimeData.setAccessTypeExt(M68K);
             if (canRun) {
-                cycleDelay = cpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
+                cycleDelay = cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
             if (isRunning) {
                 bus.handleVdpInterrupts68k();
             }
-            cycleDelay = Math.max(1, cycleDelay);
+            cycleDelay = Math.max(1, cycleDelay + MdRuntimeData.resetCpuDelayExt());
             next68kCycle += M68K_DIVIDER * cycleDelay;
-            assert MdRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.getCpuDelayExt(M68K) == 0;
         }
     }
 
     protected final void runZ80() {
+        assert MdRuntimeData.getCpuDelayExt(Z80) == 0;
         if (cycleCounter == nextZ80Cycle) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
@@ -183,7 +185,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
             }
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
-            assert MdRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.getCpuDelayExt(Z80) == 0;
         }
     }
 

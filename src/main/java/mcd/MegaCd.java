@@ -139,22 +139,30 @@ public class MegaCd extends Megadrive {
     double subCnt = 0;
 
     protected void runSub68k() {
+        assert MdRuntimeData.getCpuDelayExt(SUB_M68K) == 0;
         while (nextSub68kCycle <= cycleCounter) {
             boolean canRun = !subCpu.isStopped();
             int cycleDelayCpu = 1;
             MdRuntimeData.setAccessTypeExt(SUB_M68K);
             if (canRun) {
-                cycleDelayCpu = subCpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
+                cycleDelayCpu = subCpu.runInstruction();
             }
             //interrupts are processed after the current instruction
+            //a taken interrupt generates a delay
             interruptHandler.handleInterrupts();
-            cycleDelayCpu = Math.max(1, cycleDelayCpu);
+            cycleDelayCpu = Math.max(1, cycleDelayCpu + MdRuntimeData.resetCpuDelayExt());
+            runDevices(cycleDelayCpu);
             subCnt += cycleDelayCpu; //cycles @ 12.5 Mhz
-            mcdLaunchContext.stepDevices(cycleDelayCpu);
             //convert cycles @ 12.5 Mhz to cycles @ 7.67 Mhz
             nextSub68kCycle += M68K_DIVIDER * mcd68kRatio * cycleDelayCpu;
-            assert MdRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.getCpuDelayExt(SUB_M68K) == 0;
         }
+    }
+
+    protected void runDevices(int cycleDelayCpu) {
+        assert MdRuntimeData.getCpuDelayExt() == 0;
+        mcdLaunchContext.stepDevices(cycleDelayCpu);
+        assert MdRuntimeData.getCpuDelayExt() == 0;
     }
 
     @Override
