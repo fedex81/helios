@@ -445,8 +445,7 @@ public class CdcImpl implements Cdc {
              * #define TYPE_MODE1 0x01
              * #define TYPE_MODE2 0x02
              */
-            ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(cueSheet, track);
-            cdcContext.header.mode = etd.trackDataType == CdModel.TrackDataType.AUDIO ? 0 : 1;
+            cdcContext.header.mode = ExtendedCueSheet.isAudioTrack(cueSheet, track) ? 0 : 1;
             /* set !VALST */
             cdcContext.decoder.valid = 1;
 
@@ -487,7 +486,12 @@ public class CdcImpl implements Cdc {
                 ram.put((byte) cdcContext.header.mode);
                 offset += 4;
                 /* check decoded block mode */
-                cdd_read_data(sector, offset, etd);
+                if (track != Cdd.LEADOUTNUM) {
+                    ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(cueSheet, track);
+                    cdd_read_data(sector, offset, etd);
+                } else {
+                    LogHelper.logWarnOnce(LOG, "Attempting to decode LEADOUT, track {}, MSF {} ", th(track), msfHolder);
+                }
 //                if (cdcContext.header.mode == 0x01) {
 //                    assert etd.trackDataType != CdModel.TrackDataType.AUDIO;
 //                    /* write Mode 1 user data to RAM buffer (2048 bytes) */

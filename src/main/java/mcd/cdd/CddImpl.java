@@ -476,11 +476,11 @@ class CddImpl implements Cdd {
 
                 /* get current track index */
                 index = inTrack(cddContext.io.sector);
-                if (index == 0) { //sector < 0, use track 1
+                if (index == LEADINNUM) { //sector < 0, use track 1
                     //TODO should not seek in lead-in?
                     index = 1;
                 }
-                if (index == 0xAA) {
+                if (index == LEADOUTNUM) {
                     //TODO should not seek in lead-out?
                     index = 1; //leadout, use last track
                 }
@@ -751,7 +751,7 @@ class CddImpl implements Cdd {
         //TODO clear DRS
         setBit(memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, MCD_CDD_CONTROL),
                 MCD_CDD_CONTROL.addr + 1, 1, 0, Size.BYTE);
-        if (track > 0) {
+        if (track > LEADINNUM && track < LEADOUTNUM) {
             setTrack(track);
             setSector(cddContext.io.sector + 1);
             cddContext.io.sample = 0;
@@ -775,10 +775,10 @@ class CddImpl implements Cdd {
         //this is absolute-time LBA
         if (lba < -CueFileParser.PREGAP_LEN_LBA) {
             LogHelper.logWarnOnce(LOG, "LBA in LEAD-IN: {}", lba);
-            return 0;
+            return LEADINNUM;
         } else if (lba >= extCueSheet.sectorEnd) {
             LogHelper.logWarnOnce(LOG, "LBA in LEAD-OUT: {}", lba);
-            return 0xAA;
+            return LEADOUTNUM;
         } else if (lba < 0) {
             LogHelper.logWarnOnce(LOG, "LBA in TRACK1 PREGAP: {}", lba);
             return 1;

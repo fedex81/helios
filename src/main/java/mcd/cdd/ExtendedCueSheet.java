@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
+import static mcd.cdd.Cdd.LEADOUTNUM;
 import static omegadrive.sound.msumd.CueFileParser.PREGAP_LEN_LBA;
 import static omegadrive.system.SysUtil.CUE_EXT;
 import static omegadrive.system.SysUtil.ISO_EXT;
@@ -199,7 +200,7 @@ public class ExtendedCueSheet implements Closeable {
 
     public static boolean isAudioTrack(ExtendedCueSheet extCueSheet, int number) {
         assert number > 0;
-        return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
+        return number == LEADOUTNUM ? false : getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
     }
 
     public boolean isCdAudio() {
