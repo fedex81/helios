@@ -130,7 +130,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     public int read(int address, Size size) {
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
-        MdRuntimeData.addCpuDelayExt(1);
+//        MdRuntimeData.addCpuDelayExt(1); //TODO excessive slow-down, Sonic CD
         address &= MCD_SUB_ADDRESS_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {

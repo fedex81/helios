@@ -9,6 +9,8 @@ Batman Returns EU
 Cosmic JP
 - audio issue with pops, clipping problem? PCM
 
+Time Gal USA - intro clipping, PCM is at max
+
 not working
 Aisle Lord JP - freeze after BIOS
 Annette Futatabi JP - freeze after BIOS

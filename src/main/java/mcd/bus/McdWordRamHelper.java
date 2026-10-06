@@ -50,6 +50,10 @@ public class McdWordRamHelper {
         this.wordRam01 = wordRam01;
     }
 
+    public void setUpdateImpl(UpdateImpl updateImpl) {
+        this.updateImpl = updateImpl;
+    }
+
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
         switch (size) {
             case WORD -> writeWordRamWord(cpu, address, value);
@@ -387,5 +391,15 @@ public class McdWordRamHelper {
         if (doWrite) {
             wramBank[addr] = (byte) ArrayEndianUtil.setNibbleInByteBE(wramBank[addr], data, address & 1);
         }
+    }
+
+    public void resetState() {
+        mainHasWord2m = true;
+        bankToggle = false;
+        mainSwapRequest = false;
+        gpgxDmna = 0;
+        memoryContext.wramSetup = W_2M_MAIN;
+        writeBufferRaw(memoryContext.getGateSysRegs(M68K), MCD_MEM_MODE.addr + 1, 1, Size.BYTE);
+        writeBufferRaw(memoryContext.getGateSysRegs(SUB_M68K), MCD_MEM_MODE.addr + 1, 1, Size.BYTE);
     }
 }
