@@ -22,6 +22,7 @@ import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.pcm.McdPcm.LEGACY_MODE;
+import static mcd.pcm.McdPcm.PCM_VOLUME_SHIFT;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -743,7 +744,7 @@ class CddImpl implements Cdd {
                 }
             }
         }
-        playSupport.playSample(left, right);
+        playSupport.playSample(left >> PCM_VOLUME_SHIFT, right >> PCM_VOLUME_SHIFT);
     }
 
     private void advance() {

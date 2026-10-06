@@ -34,6 +34,9 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
     //TODO
     boolean LEGACY_MODE = false;
 
+    //Time Gal
+    int PCM_VOLUME_SHIFT = 1;
+
     int PCM_NUM_CHANNELS = 8;
 
     int PCM_REG_SIZE = 0x20;
@@ -246,7 +249,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
                         PcmChannelContext ct = chan[i];
                         int chanOn = (chanControl >> i) & 1;
                         if (ct.on == 0 && chanOn > 0) {
-                            ct.addrCounter = channel.startAddr << PCM_FIX_POINT_DECIMAL;
+                            ct.addrCounter = ct.startAddr << PCM_FIX_POINT_DECIMAL;
                         }
                         ct.on = chanOn;
                     }
@@ -331,7 +334,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
             if (verbose && prev != rs)
                 LOG.info("PCM right clamp {} -> {}", th(prev), th(rs));
             /* 16-bit DAC output (interleaved) */
-            playSupport.playSample(ls, rs);
+            playSupport.playSample(ls >> PCM_VOLUME_SHIFT, rs >> PCM_VOLUME_SHIFT);
         }
 
         @Override

@@ -6,19 +6,10 @@ Flashback DEMO EU
 Batman Returns EU
 - problem with Asic generated sprites, I think transparency vs MD layer is not handled correctly
 
-Cosmic JP
-- audio issue with pops, clipping problem? PCM
-
-Time Gal USA - intro clipping, PCM is at max
-
 not working
 Aisle Lord JP - freeze after BIOS
-Annette Futatabi JP - freeze after BIOS
 Arslan Senki JP - 1st screen after BIOS
-Battlecorps JP
-Cosmic Fantasy JP
 Daihou.. JP
-Devastator
 Earnest Evans
 Jangou world cup
 
