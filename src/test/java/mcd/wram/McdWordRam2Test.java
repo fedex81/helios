@@ -1,5 +1,6 @@
-package mcd;
+package mcd.wram;
 
+import mcd.McdRegTestBase;
 import mcd.dict.MegaCdDict;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.MdMainBusProvider;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static mcd.McdWordRamTest.*;
 import static mcd.bus.McdWordRamHelper.getBank;
 import static mcd.bus.McdWordRamHelper.getBank1M;
 import static mcd.dict.MegaCdDict.*;
@@ -20,6 +20,7 @@ import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
+import static mcd.wram.McdWordRamTest.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;

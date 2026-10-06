@@ -27,9 +27,9 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 public class McdRegTestBase {
 
     protected McdDeviceHelper.McdLaunchContext lc;
-    MegaCdMemoryContext ctx;
-    MegaCdMainCpuBusIntf mainCpuBus;
-    MegaCdSubCpuBusIntf subCpuBus;
+    protected MegaCdMemoryContext ctx;
+    protected MegaCdMainCpuBusIntf mainCpuBus;
+    protected MegaCdSubCpuBusIntf subCpuBus;
 
     MC68000Wrapper subCpu;
     @BeforeEach

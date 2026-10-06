@@ -1,5 +1,6 @@
-package mcd;
+package mcd.wram;
 
+import mcd.McdRegTestBase;
 import mcd.util.McdWramCell;
 import omegadrive.util.FileUtil;
 import org.junit.jupiter.api.Assertions;
@@ -17,7 +18,7 @@ import java.util.TreeMap;
  * <p>
  * Copyright 2024
  */
-public class McdVramMappingTest extends McdRegTestBase {
+public class McdWramMappingTest extends McdRegTestBase {
 
 
     /**

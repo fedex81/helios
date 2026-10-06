@@ -1,6 +1,7 @@
-package mcd;
+package mcd.wram;
 
 import mcd.McdDeviceHelper.McdLaunchContext;
+import mcd.McdRegTestBase;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.model.BaseBusProvider;

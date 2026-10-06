@@ -1,5 +1,6 @@
-package mcd;
+package mcd.wram;
 
+import mcd.McdRegTestBase;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

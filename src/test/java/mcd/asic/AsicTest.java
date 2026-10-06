@@ -1,10 +1,10 @@
 package mcd.asic;
 
 import mcd.McdRegTestBase;
-import mcd.McdWordRamTest;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.wram.McdWordRamTest;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;

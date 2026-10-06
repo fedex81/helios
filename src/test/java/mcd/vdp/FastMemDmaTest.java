@@ -17,7 +17,7 @@
 
 package mcd.vdp;
 
-import mcd.McdWordRamTest;
+import mcd.wram.McdWordRamTest;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
