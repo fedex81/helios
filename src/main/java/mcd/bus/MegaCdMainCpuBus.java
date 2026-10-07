@@ -1,5 +1,6 @@
 package mcd.bus;
 
+import mcd.cdd.Cdd;
 import mcd.cdd.cdbios.CdBiosHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
@@ -12,6 +13,7 @@ import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.joypad.MdJoypad;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -21,7 +23,10 @@ import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
@@ -30,6 +35,8 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.util.McdRegBitUtil.setBitDefInternalBitVal;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
+import static omegadrive.system.SysUtil.*;
+import static omegadrive.system.SysUtil.RomFileType.ISO;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.*;
@@ -111,6 +118,34 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             LOG.info("CUE/ISO file detected, disabling mode1 mapper");
         }
         bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
+        checkPierSolarDisc();
+    }
+
+    private void checkPierSolarDisc() {
+        //TODO HACK for Pier Solar
+        //CD has no code, just 1 DATA TRACK (PCM DATA) and 3 CDDA tracks
+        //it needs the cart to be inserted
+        MdCartInfoProvider cartInfo = mdBus.getCartridgeInfoProvider();
+        String serial = cartInfo.getSerial();
+        String name = cartInfo.getRomName();
+        if (name.startsWith("Pier Solar") || serial.contains("GM T-574013")) {
+            setEnableMode1(true);
+            MediaSpecHolder msh = systemProvider.getMediaSpec();
+            final String n = Util.getNameWithoutExtension(name);
+            String[] exts = {CUE_EXT, ISO_EXT, ISO_GZ_EXT};
+            for (String ext : exts) {
+                String discName = n + ext;
+                Path discPath = msh.cartFile.romFile.resolveSibling(discName);
+                if (Files.exists(discPath) && Files.isReadable(discPath)) {
+                    RomFileType type = CUE_EXT.equals(ext) ? RomFileType.BIN_CUE : ISO;
+                    LOG.warn("Pier Solar Soundtrack Disc detected attempting to load {} file: {}", type, discPath);
+                    msh.cdFile = MediaSpecHolder.MediaSpec.of(discPath, type, msh.systemType);
+                    Optional<Cdd> cddOpt = getBusDeviceIfAny(Cdd.class);
+                    cddOpt.ifPresent(cdd -> msh.cdFile.sheetOpt.ifPresent(s -> cdd.tryInsert(s)));
+                    break;
+                }
+            }
+        }
     }
 
     @Override

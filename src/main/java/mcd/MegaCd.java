@@ -97,6 +97,7 @@ public class MegaCd extends Megadrive {
         super.init();
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
+        bus.attachDevice(mcdLaunchContext.cdd);
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;

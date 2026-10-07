@@ -16,6 +16,7 @@ import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
+import static mcd.util.McdWramCell.linearCellMap;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -88,7 +89,7 @@ public class McdWordRamHelper {
         } else {
             //BIOS JP when playing CDDA
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, memoryContext.wramSetup);
-            LOG.info("WRAM DIAG {} WRITE MISMATCH at {} val {} but setup is {}", cpu, th(address), th(value), memoryContext.wramSetup);
+//            LOG.info("WRAM DIAG {} WRITE MISMATCH at {} val {} but setup is {}", cpu, th(address), th(value), memoryContext.wramSetup);
 //            assert false;
         }
     }
@@ -391,6 +392,61 @@ public class McdWordRamHelper {
         if (doWrite) {
             wramBank[addr] = (byte) ArrayEndianUtil.setNibbleInByteBE(wramBank[addr], data, address & 1);
         }
+    }
+
+//    public void writeCellMapped(int addr, int data, Size size) {
+//        assert memoryContext.wramSetup.mode == _1M;
+//        switch (size) {
+//            case BYTE -> {
+//                int val = readCellMapped(addr, Size.WORD);
+//                ArrayEndianUtil.setByteInWordBE(val, data, addr & 1);
+//                writeCell(addr & ~1, val);
+//            }
+//            case WORD -> writeCell(addr, data);
+//            case LONG -> {
+//                writeCell(addr, data >> 16);
+//                writeCell(addr + 2, data);
+//            }
+//        }
+//    }
+
+    public static int cellImageTranslateByByteOffset(int address) {
+        int wordOfCell = address & 2;
+        int res;
+        if (address < 0x10_000) {
+            //64x32 cell view
+            int lineOfColumn = address & 0x3FC;
+            int column = address & 0xFC00;
+            res = (lineOfColumn << 6) | (column << 8) | wordOfCell;
+        } else if (address < 0x18_000) {
+            //64x16 cell view
+            int lineOfColumn = address & 0x1FC;
+            int column = address & 0x7e00;
+            res = 0x10_000 | (lineOfColumn << 6) | (column << 7) | wordOfCell;
+        } else if (address < 0x1C_000) {
+            //64x8 cell view
+            int lineOfColumn = address & 0xFC;
+            int column = address & 0x3f00;
+            res = 0x18_000 | (lineOfColumn << 6) | (column << 6) | wordOfCell;
+        } else {
+            //64x4 cell view
+            int lineOfColumn = address & 0x7C;
+            int column = address & 0x1f80;
+            res = (address & 0x1e000) | (lineOfColumn << 6) | (column << 6) | wordOfCell;
+        }
+        return res;
+    }
+
+    public int readCellMapped(CpuDeviceAccess cpu, int cellOffset, Size size) {
+        assert memoryContext.wramSetup.mode == _1M;
+        int linear = cellImageTranslateByByteOffset(cellOffset & MCD_WORD_RAM_1M_MASK);
+        return readWordRam(cpu, linear, size);
+    }
+
+    private void writeCell(int a, int value) {
+        int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
+        int otherBank = ~assignedBank & 1;
+        writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
     }
 
     public void resetState() {
