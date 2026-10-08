@@ -51,7 +51,7 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
         s32xBus.init();
         cartBoot = true;
         //TODO improve, 32x set cart = NOT_PRESENT
-        if (getSystem().getMediaSpec().cdFile.bootable) {
+        if (!getSystem().getMediaSpec().hasRomCart()) {
             s32xBus.setRom(ByteBuffer.allocate(0));
             cartBoot = false;
         }

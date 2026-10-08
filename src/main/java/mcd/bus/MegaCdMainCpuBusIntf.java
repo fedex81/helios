@@ -16,8 +16,6 @@ public interface MegaCdMainCpuBusIntf extends MdMainBusProvider {
 
     boolean isEnableMode1();
 
-    boolean isBios();
-
     void setEnableMode1(boolean enableMode1);
 
     //TODO: TEST only

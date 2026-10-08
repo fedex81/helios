@@ -130,7 +130,7 @@ public class JinputGamepadInputProvider implements InputProvider {
                         c.getType() == Controller.Type.GAMEPAD).
                 collect(Collectors.toList());
         if (DEBUG_DETECTION || l.isEmpty()) {
-            LOG.info("Controller detection: {}", detectAllControllerVerbose());
+            LOG.debug("Controller detection: {}", detectAllControllerVerbose());
         }
         return l;
     }

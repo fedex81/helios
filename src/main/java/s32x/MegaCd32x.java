@@ -1,29 +1,23 @@
 package s32x;
 
 import mcd.McdDeviceHelper;
-import mcd.MegaCd;
 import mcd.bus.Mcd32xMainBus;
 import mcd.bus.McdSubInterruptHandler;
 import mcd.pcm.McdPcm;
+import mcd.util.Mode1Helper;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.system.MediaSpecHolder;
-import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
-import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
 
-import java.nio.file.Files;
-
 import static mcd.MegaCd.*;
-import static omegadrive.system.SysUtil.ISO_EXT;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
@@ -77,9 +71,13 @@ public class MegaCd32x extends Md32x {
             sound.setEnabled(sound.getPcm(), ENABLE_PCM);
             sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
         }
-        MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
-        checkDoomFusion();
         subCpu.reset();
+    }
+
+    @Override
+    protected void postInit() {
+        super.postInit();
+        Mode1Helper.checkMode1AndInsertDisc(mcdLaunchContext, mediaSpec);
     }
 
     @Override
@@ -196,28 +194,5 @@ public class MegaCd32x extends Md32x {
     @Override
     protected void init32x() {
         super.init32x();
-    }
-
-    private void checkDoomFusion() {
-        //TODO HACK for Doom Fusion
-        //CD32x official releases boot from CD with no cart inserted
-        //DoomFusion boots from cart with CD inserted
-        MdCartInfoProvider cartInfo = ((MdCartInfoProvider) mediaSpec.getBootableMedia().mediaInfoProvider);
-        String serial = cartInfo.getSerial();
-        String name = cartInfo.getRomName();
-        if (name.startsWith("DCD32X") || serial.contains("DMF32XCD")) {
-            String isoName = Util.getNameWithoutExtension(name) + ISO_EXT;
-            MediaSpecHolder.MediaSpec iso = MediaSpecHolder.MediaSpec.of(
-                    mediaSpec.getBootableMedia().romFile.resolveSibling(isoName), SysUtil.RomFileType.ISO, mediaSpec.systemType);
-            assert Files.exists(iso.romFile);
-            LOG.warn("DoomCD32x Fusion detected attempting to load iso file: {}", iso.romFile.toAbsolutePath());
-            mediaSpec.cdFile = iso;
-            mediaSpec.systemType = iso.systemType = mediaSpec.cartFile.systemType = SystemType.MEGACD_S32X;
-            mediaSpec.reload();
-            MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
-        } else {
-            assert mediaSpec.hasDiscImage();
-            mediaSpec.systemType = mediaSpec.cdFile.systemType = SystemType.MEGACD_S32X;
-        }
     }
 }

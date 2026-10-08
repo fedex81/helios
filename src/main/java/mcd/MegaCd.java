@@ -20,15 +20,13 @@
 package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
-import mcd.cdd.ExtendedCueSheet;
 import mcd.pcm.McdPcm;
 import mcd.util.McdMemView;
+import mcd.util.Mode1Helper;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.Megadrive;
-import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
@@ -36,9 +34,6 @@ import omegadrive.util.MdRuntimeData;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static omegadrive.ui.DisplayWindow.DisplayContext.MCD_LED_KEY;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -113,7 +108,9 @@ public class MegaCd extends Megadrive {
     @Override
     protected void postInit() {
         super.postInit();
-        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
+        Mode1Helper.checkMode1AndInsertDisc(mcdLaunchContext, mediaSpec);
+        //in case we switched to Mode1 (Flux)
+        cpu.reset();
     }
 
     @Override
@@ -199,31 +196,6 @@ public class MegaCd extends Megadrive {
         assert nextSub68kCycle >= counter;
         logSlowFrames();
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
-    }
-
-    //fudge it
-    public static void megaCdDiscInsert(McdDeviceHelper.McdLaunchContext mcdLaunchContext, MediaSpecHolder mediaSpec) {
-        boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
-        boolean bios = mcdLaunchContext.mainBus.isBios();
-        boolean tryInsertAsDisc = !segaMode1 && !bios && mediaSpec.hasDiscImage();
-        boolean biosNoDisc = false;
-        boolean biosCdAudio = true;
-        if (bios) {
-            LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
-        }
-        if (tryInsertAsDisc) {
-            assert mediaSpec.cdFile.sheetOpt.isPresent();
-            mcdLaunchContext.cdd.tryInsert(mediaSpec.cdFile.sheetOpt.get());
-        } else if (segaMode1 || (!bios || biosCdAudio)) {
-            //insert an audio CD, for testing mode1 CD Player
-            Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
-            //test mcd-ver
-//            Path p = Path.of("./test_roms/SonicCD", "SonicCD.cue");
-            if (Files.exists(p)) {
-                ExtendedCueSheet cueSheet = new ExtendedCueSheet(p, SysUtil.RomFileType.BIN_CUE);
-                mcdLaunchContext.cdd.tryInsert(cueSheet);
-            }
-        }
     }
 
     @Override
