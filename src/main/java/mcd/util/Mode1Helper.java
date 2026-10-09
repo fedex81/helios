@@ -62,7 +62,8 @@ public class Mode1Helper {
         String serial = cartInfo.getSerial();
         String name = cartInfo.getRomName();
         boolean isPierSolar = name.startsWith("Pier Solar") || serial.contains("GM T-574013");
-        boolean isDoom32xFusion = name.startsWith("DCD32X") || serial.contains("DMF32XCD");
+        boolean isDoom32xFusion = name.startsWith("DCD32X") || serial.contains("DMF32XCD") ||
+                cartInfo.toString().contains("Doom CD32X Fusion");
         boolean isFlux = name.startsWith("Flux ") || serial.contains("GM T-70416");
         if (isPierSolar || isDoom32xFusion || isFlux) {
             mcdLaunchContext.mainBus.setEnableMode1(true);

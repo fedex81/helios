@@ -177,7 +177,7 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
 
 
     static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc, boolean soundEnabled) {
-        return new CddImpl(memoryContext, ih, cdc, soundEnabled);
+        return new CddImplNew(memoryContext, ih, cdc, soundEnabled);
     }
 
     static int getCddChecksum(int[] vals) {

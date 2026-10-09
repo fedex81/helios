@@ -69,7 +69,7 @@ tasks.register('fatJar', Jar) {
     getArchiveBaseName().set(project.name + "-all")//+ version
     from { configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) } }
     from {
-        ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md", "helios.properties"]
+        ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE", "helios.properties"]
     }
     from("bios") {
         include "*.rom"
@@ -91,7 +91,7 @@ tasks.register('copyRes') {
     copy {
         from {
             ["CREDITS.md", "README.md", "HISTORY.md",
-             "LICENSE.md", "helios.properties", "key.config.1p"]
+             "LICENSE", "helios.properties", "key.config.1p"]
         }
         into packageDir
     }

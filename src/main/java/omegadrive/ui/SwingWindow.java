@@ -443,7 +443,7 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem licenseItem = new JMenuItem("License");
         addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
-                FileUtil.readFileContentAsString("LICENSE.md")));
+                FileUtil.readFileContentAsString("LICENSE")));
 
         JMenuItem historyItem = new JMenuItem("History");
         addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
