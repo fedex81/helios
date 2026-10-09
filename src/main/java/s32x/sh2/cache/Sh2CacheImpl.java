@@ -482,6 +482,11 @@ public class Sh2CacheImpl implements Sh2Cache {
     }
 
     private static int getCachedData(final byte[] data, int addr, Size size) {
+        //TODO: Doom Fusion V3: Invalid cache read: f WORD
+        if ((addr & 1) == 1 & size == Size.WORD) {
+            LogHelper.logErrorOnce(LOG, "Invalid cache read: {} {}", addr, size);
+            return size.getMask();
+        }
         return Util.readDataMask(data, addr, CACHE_BYTES_PER_LINE_MASK, size);
     }
 }

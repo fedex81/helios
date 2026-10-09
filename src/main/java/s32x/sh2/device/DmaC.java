@@ -71,6 +71,7 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         return BufferUtil.readBuffer(regs, reg, size);
     }
 
+    private static final int DMA_AUTOREQ_MAX_STEPS = 0x100_0000;
     @Override
     public void step(int cycles) {
         //NOTE: dma runs 1/3 speed, but without memory access delays, seems to be close enough
@@ -78,7 +79,13 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
             return;
         }
         for (DmaHelper.DmaChannelSetup c : dmaChannelSetup) {
-            if (c.dmaInProgress && (c.chcr_autoReq || c.dreqLevel)) {
+            if (c.chcr_autoReq) {
+                int guard = 0;
+                while (c.dmaInProgress && guard++ < DMA_AUTOREQ_MAX_STEPS) {
+                    dmaOneStep(c);
+                }
+                assert guard < DMA_AUTOREQ_MAX_STEPS;
+            } else if (c.dmaInProgress && c.dreqLevel) {
                 dmaOneStep(c);
             }
         }
