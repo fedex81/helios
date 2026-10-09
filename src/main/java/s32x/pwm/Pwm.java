@@ -390,8 +390,8 @@ public class Pwm implements StepDevice {
     private void dreq() {
         if (ctx.dreqEn) {
             //NOTE this should trigger on channel one for BOTH sh2s
-            dmac[MASTER.ordinal()].dmaReqTriggerPwm(PWM_DMA_CHANNEL, true);
-            dmac[SLAVE.ordinal()].dmaReqTriggerPwm(PWM_DMA_CHANNEL, true);
+            dmac[MASTER.ordinal()].dmaReqTrigger(PWM_DMA_CHANNEL, true, true);
+            dmac[SLAVE.ordinal()].dmaReqTrigger(PWM_DMA_CHANNEL, true, true);
             dreqPerFrame++;
         }
     }

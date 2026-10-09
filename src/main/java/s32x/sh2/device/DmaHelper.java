@@ -56,6 +56,7 @@ public class DmaHelper {
         c.chcr_tranEndOk = (chcr & 2) > 0;
         c.chcr_intEn = (chcr & 4) > 0;
         c.chcr_autoReq = ((chcr >> 9) & 1) > 0;
+        c.chcr_dreqEdge = ((chcr >> 6) & 1) > 0;
         c.chcr_destMode = modeVals[(chcr >> 14) & 0x3];
         c.chcr_srcMode = modeVals[(chcr >> 12) & 0x3];
         c.chcr_transferSize = trnVals[(chcr >> 10) & 0x3];
@@ -82,6 +83,8 @@ public class DmaHelper {
     public static class DmaChannelSetup {
         public int channel;
         public boolean chcr_dmaEn, chcr_intEn, chcr_autoReq, chcr_tranEndOk;
+        //DS bit: false = DREQ detected by level, true = detected by edge (pulse)
+        public boolean chcr_dreqEdge;
         public boolean dmaor_dme, dreqLevel;
         public DmaSrcDestMode chcr_destMode, chcr_srcMode;
         public DmaTransferSize chcr_transferSize;
@@ -99,6 +102,7 @@ public class DmaHelper {
                     ", chcr_tranEndOk=" + chcr_tranEndOk +
                     ", dmaor_dme=" + dmaor_dme +
                     ", dreqLevel=" + dreqLevel +
+                    ", chcr_dreqEdge=" + chcr_dreqEdge +
                     ", chcr_destMode=" + chcr_destMode +
                     ", chcr_srcMode=" + chcr_srcMode +
                     ", chcr_transferSize=" + chcr_transferSize +

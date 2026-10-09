@@ -141,28 +141,25 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         }
     }
 
-    @Deprecated
-    public void dmaReqTriggerPwm(int channel, boolean enable) {
+    @Override
+    public void dmaReqTrigger(int channel, boolean enable) {
+        dmaReqTrigger(channel, enable, false);
+    }
+
+    public void dmaReqTrigger(int channel, boolean enable, boolean immediate) {
         DmaHelper.DmaChannelSetup d = dmaChannelSetup[channel];
         d.dreqLevel = enable;
         if (enable) {
+            LogHelper.logWarnOnce(LOG, "{} Dreq{} received, detection: {} (DS={})",
+                    cpu, channel, d.chcr_dreqEdge ? "EDGE" : "LEVEL,", d.chcr_dreqEdge ? 1 : 0);
             checkDmaStart(d);
-            if (d.dmaInProgress) {
+            if (immediate && d.dmaInProgress) {
                 MdRuntimeData.setAccessTypeExt(cpu);
                 dmaOneStep(d);
                 d.dreqLevel = false;
                 d.dmaInProgress = false;
                 updateOneDmaInProgress();
             }
-        }
-        if (verbose) LOG.info("{} DreqPwm{} Level: {}", cpu, channel, enable);
-    }
-
-    @Override
-    public void dmaReqTrigger(int channel, boolean enable) {
-        dmaChannelSetup[channel].dreqLevel = enable;
-        if (enable) {
-            checkDmaStart(dmaChannelSetup[channel]);
         }
         if (verbose) LOG.info("{} Dreq{} Level: {}", cpu, channel, enable);
     }
