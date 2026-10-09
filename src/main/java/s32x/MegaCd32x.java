@@ -3,7 +3,6 @@ package s32x;
 import mcd.McdDeviceHelper;
 import mcd.bus.Mcd32xMainBus;
 import mcd.bus.McdSubInterruptHandler;
-import mcd.pcm.McdPcm;
 import mcd.util.Mode1Helper;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
@@ -65,12 +64,10 @@ public class MegaCd32x extends Md32x {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
-        if (!McdPcm.LEGACY_MODE) {
-            mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
-            mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
-            sound.setEnabled(sound.getPcm(), ENABLE_PCM);
-            sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
-        }
+        mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
+        mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
+        sound.setEnabled(sound.getPcm(), ENABLE_PCM);
+        sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
         subCpu.reset();
     }
 

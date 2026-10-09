@@ -14,6 +14,7 @@ import omegadrive.util.VideoMode;
 import java.util.Arrays;
 
 import static mcd.cdd.Cdd.CddStatus.NoDisc;
+import static omegadrive.util.Util.th;
 
 /**
  * Cdd
@@ -31,6 +32,8 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
     //track numbers for leadin and leadout
     int LEADINNUM = 0;
     int LEADOUTNUM = 0xAA;
+
+    int CD_SCAN_SPEED = 30;
 
     //status, command registers
     int CDD_REG_NUM = 10;
@@ -183,5 +186,17 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
             checksum += vals[i];
         }
         return ~checksum & 0xF;
+    }
+
+    static String toShortString(int[] vals) {
+        assert vals.length == CDD_REG_NUM;
+        String str = "";
+        for (int i = 0; i < vals.length; i++) {
+            if (i == 2 || i == 8) {
+                str += ".";
+            }
+            str += th(vals[i]);
+        }
+        return str;
     }
 }

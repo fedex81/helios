@@ -148,16 +148,10 @@ public class SysUtil {
     }
 
     public static SoundDevice getPcmProvider(SystemType systemType, Region region) {
-        if (McdPcm.LEGACY_MODE) {
-            return PcmProvider.NO_SOUND;
-        }
         return systemType.isMegaCdAttached() ? new BlipPcmProvider("PCM", region, McdPcm.PCM_SAMPLE_RATE_HZ) : PcmProvider.NO_SOUND;
     }
 
     public static SoundDevice getCddaProvider(SystemType systemType, Region region) {
-        if (McdPcm.LEGACY_MODE) {
-            return PcmProvider.NO_SOUND;
-        }
         return systemType.isMegaCdAttached() ? new BlipPcmProvider("CDDA", region) : PcmProvider.NO_SOUND;
     }
 

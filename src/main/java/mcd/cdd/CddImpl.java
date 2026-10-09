@@ -8,7 +8,6 @@ import mcd.pcm.BlipPcmProviderLine;
 import omegadrive.sound.PcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
@@ -21,7 +20,6 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_SUBCODE;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.pcm.McdPcm.LEGACY_MODE;
 import static mcd.pcm.McdPcm.PCM_VOLUME_SHIFT;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
@@ -56,8 +54,7 @@ class CddImpl implements Cdd {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = soundEnabled && LEGACY_MODE ?
-                new BlipPcmProviderLine("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProviderLine.NO_SOUND;
+        playSupport = BlipPcmProviderLine.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();
@@ -66,10 +63,6 @@ class CddImpl implements Cdd {
 
     @Override
     public void setPcmProvider(PcmProvider pp) {
-        if (LEGACY_MODE) {
-            LOG.warn("Ignore PcmProvider, using its own data line");
-            return;
-        }
         playSupport = pp;
     }
 

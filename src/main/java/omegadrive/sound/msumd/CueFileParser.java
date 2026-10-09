@@ -18,6 +18,8 @@ public class CueFileParser {
 
     public static final int PREGAP_LEN_LBA = 150;
     static final int SECTOR_SIZE_BYTES = 2352;
+    public static final MsfHolder EMPTY = new MsfHolder();
+
 
     public static final Function<Integer, Integer> toBcdByte = n -> {
         assert n >= 0 && n < 100;

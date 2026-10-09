@@ -4,7 +4,10 @@ import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import omegadrive.sound.PcmProvider;
 import omegadrive.system.SystemProvider;
-import omegadrive.util.*;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
+import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -30,9 +33,6 @@ import static omegadrive.util.Util.th;
 public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameListener {
 
     Logger LOG = LogHelper.getLogger(McdPcm.class.getSimpleName());
-
-    //TODO
-    boolean LEGACY_MODE = false;
 
     //Time Gal
     int PCM_VOLUME_SHIFT = 1;
@@ -115,7 +115,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
             waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
             pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
             chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-            playSupport = enableSound && LEGACY_MODE ? new BlipPcmProviderLine("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : PcmProvider.NO_SOUND;
+            playSupport = PcmProvider.NO_SOUND;
             for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
                 chan[i] = new PcmChannelContext();
                 chan[i].num = i;
@@ -279,10 +279,6 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
 
         @Override
         public void setPcmProvider(PcmProvider pp) {
-            if (LEGACY_MODE) {
-                LOG.warn("Ignore PcmProvider, using its own data line");
-                return;
-            }
             playSupport = pp;
         }
 

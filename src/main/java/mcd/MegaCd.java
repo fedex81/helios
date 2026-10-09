@@ -20,7 +20,6 @@
 package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
-import mcd.pcm.McdPcm;
 import mcd.util.McdMemView;
 import mcd.util.Mode1Helper;
 import omegadrive.SystemLoader;
@@ -96,12 +95,10 @@ public class MegaCd extends Megadrive {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
-        if (!McdPcm.LEGACY_MODE) {
-            mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
-            mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
-            sound.setEnabled(sound.getPcm(), ENABLE_PCM);
-            sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
-        }
+        mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
+        mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
+        sound.setEnabled(sound.getPcm(), ENABLE_PCM);
+        sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
         subCpu.reset();
     }
 
