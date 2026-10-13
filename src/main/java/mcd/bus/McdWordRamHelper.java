@@ -34,6 +34,8 @@ public class McdWordRamHelper {
 
     public static final boolean WRAM_DIAG = false;
 
+    public static final int MCD_WORD_RAM_CELL_IMAGE_START = MCD_WORD_RAM_1M_SIZE; //0x20_000
+
     public enum UpdateImpl {BLASTEM, GPGX}
 
     private UpdateImpl updateImpl = UpdateImpl.GPGX;
@@ -87,7 +89,7 @@ public class McdWordRamHelper {
         if (cpu == memoryContext.wramSetup.cpu || memoryContext.wramSetup.mode == _1M) {
             writeWordRamBank(getBank(memoryContext.wramSetup, cpu, address), address, value);
         } else {
-            //BIOS JP when playing CDDA
+            //TODO BatmanReturns ASIC writes here
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, memoryContext.wramSetup);
 //            LOG.info("WRAM DIAG {} WRITE MISMATCH at {} val {} but setup is {}", cpu, th(address), th(value), memoryContext.wramSetup);
 //            assert false;
@@ -99,8 +101,9 @@ public class McdWordRamHelper {
         if (cpu == memoryContext.wramSetup.cpu || memoryContext.wramSetup.mode == _1M) {
             return readWordRamBank(getBank(memoryContext.wramSetup, cpu, address), address);
         } else {
+            //TODO BatmanReturns, ASIC reads from here
             logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, memoryContext.wramSetup);
-            LOG.info("WRAM DIAG {} READ MISMATCH at {} but setup is {} -> returns FFFF", cpu, th(address), memoryContext.wramSetup);
+//            LOG.info("WRAM DIAG {} READ MISMATCH at {} but setup is {} -> returns FFFF", cpu, th(address), memoryContext.wramSetup);
             return Size.WORD.getMask();
         }
     }
@@ -410,37 +413,51 @@ public class McdWordRamHelper {
 //        }
 //    }
 
-    public static int cellImageTranslateByByteOffset(int address) {
-        int wordOfCell = address & 2;
+    public static int cellImageTranslateWordIndex(int cellOffset) {
+        int wordOfCell = cellOffset & 2;
         int res;
-        if (address < 0x10_000) {
+        if (cellOffset < 0x10_000) {
             //64x32 cell view
-            int lineOfColumn = address & 0x3FC;
-            int column = address & 0xFC00;
+            int lineOfColumn = cellOffset & 0x3FC;
+            int column = cellOffset & 0xFC00;
             res = (lineOfColumn << 6) | (column << 8) | wordOfCell;
-        } else if (address < 0x18_000) {
+        } else if (cellOffset < 0x18_000) {
             //64x16 cell view
-            int lineOfColumn = address & 0x1FC;
-            int column = address & 0x7e00;
+            int lineOfColumn = cellOffset & 0x1FC;
+            int column = cellOffset & 0x7e00;
             res = 0x10_000 | (lineOfColumn << 6) | (column << 7) | wordOfCell;
-        } else if (address < 0x1C_000) {
+        } else if (cellOffset < 0x1C_000) {
             //64x8 cell view
-            int lineOfColumn = address & 0xFC;
-            int column = address & 0x3f00;
+            int lineOfColumn = cellOffset & 0xFC;
+            int column = cellOffset & 0x3f00;
             res = 0x18_000 | (lineOfColumn << 6) | (column << 6) | wordOfCell;
         } else {
             //64x4 cell view
-            int lineOfColumn = address & 0x7C;
-            int column = address & 0x1f80;
-            res = (address & 0x1e000) | (lineOfColumn << 6) | (column << 6) | wordOfCell;
+            int lineOfColumn = cellOffset & 0x7C;
+            int column = cellOffset & 0x1f80;
+            res = (cellOffset & 0x1e000) | (lineOfColumn << 6) | (column << 6) | wordOfCell;
         }
         return res;
     }
 
-    public int readCellMapped(CpuDeviceAccess cpu, int cellOffset, Size size) {
+    private int readWordRamByWordIndexInterleaved(int wordIndex) {
+        int bank = wordIndex & 1;
+        int byteOffset = (wordIndex >> 1) << 1;
+        return Util.readDataWord(wordRam01[bank], byteOffset & MCD_WORD_RAM_1M_MASK);
+    }
+
+    public int readWordCellImage(CpuDeviceAccess cpu, int cellOffset, Size size) {
         assert memoryContext.wramSetup.mode == _1M;
-        int linear = cellImageTranslateByByteOffset(cellOffset & MCD_WORD_RAM_1M_MASK);
-        return readWordRam(cpu, linear, size);
+        int base = cellImageTranslateWordIndex(cellOffset & MCD_WORD_RAM_1M_MASK);
+        return switch (size) {
+            case WORD -> readWordRamByWordIndexInterleaved(base);
+            case LONG -> readWordRamByWordIndexInterleaved(base << 16) |
+                    readWordCellImage(cpu, cellOffset + 2, Size.WORD);
+            case BYTE -> {
+                int word = readWordRamByWordIndexInterleaved(base);
+                yield (word >> ((~cellOffset & 1) << 3)) & 0xFF;
+            }
+        };
     }
 
     private void writeCell(int a, int value) {

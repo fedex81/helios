@@ -107,15 +107,16 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 ((dmaSrcHigh & 0xFE) == 0x30) ||
                         ((dmaSrcHigh & 0xFE) == 0x10)
         );
-        if (isMegaCd) {
-            if ((dmaSrcHigh & 0xFF) == 2 || (dmaSrcHigh & 0xFF) == 3) {
-                //TODO test, uses prgRam, Amazing Spider-Man vs. The Kingpin, The (USA)
-                megaCdDma = true;
-                LogHelper.logWarnOnce(LOG, "DMA from prgRam: {}, len: {}", th(getSourceAddress() << 1), getDmaLength());
-            }
-            LogHelper.logWarnOnce(LOG, "MegaCd DMA src address: {}, fastMem: {}",
-                    th(dmaSrcHigh), megaCdDma);
+
+        //TODO test, uses prgRam,
+        //Amazing Spider-Man vs. The Kingpin, The (USA) just one transfer, any other sw?
+        //MegaCd DMA src address: 3 (70000), fastMem: false (ONCE) -> mode1 0x47EFF2
+        if (isMegaCd && (dmaSrcHigh & 0xFF) == 1) {
+            megaCdDma = true;
+            LogHelper.logWarnOnce(LOG, "DMA from prgRam: {}, len: {}", th(getSourceAddress() << 1), getDmaLength());
         }
+        LogHelper.logWarnOnce(LOG, "MegaCd DMA src address: {} ({}), fastMem: {}",
+                th(dmaSrcHigh), th(getSourceAddress() << 1 & 0xFF_0000), megaCdDma);
         if (megaCdDma || svpDma) {
 //            LogHelper.logWarnOnce(LOG, "FastDma, {}", getDmaStateStringNoVdp());
             //TODO fix and test

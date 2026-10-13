@@ -20,6 +20,7 @@ import static mcd.cdd.Cdd.CddRequest.NotReady;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.pcm.McdPcm.PCM_VOLUME_SHIFT;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -610,7 +611,11 @@ public class CddImplNew implements Cdd {
                     updateStatus(1, NotReady.ordinal());
                     break;
                 }
-                CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
+                //TODO test: relative time in LEAD_OUT, track number becomes 0xAA and relative time keeps
+                // increasing from the last track. Thunder Storm FX (Japan)
+                int trackNumRef = cddContext.io.track == LEADOUTNUM ? extCueSheet.numTracks : cddContext.io.track;
+                CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, trackNumRef);
+
                 /* current track relative time */
                 int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
                 CueFileParser.lbaToMsf(lba, msfHolder);
@@ -721,7 +726,7 @@ public class CddImplNew implements Cdd {
                 }
             }
         }
-        playSupport.playSample(left, right);
+        playSupport.playSample(left >> PCM_VOLUME_SHIFT, right >> PCM_VOLUME_SHIFT);
     }
 
     private void advance() {

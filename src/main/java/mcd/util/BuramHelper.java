@@ -96,7 +96,10 @@ public class BuramHelper {
                 writeBufferRaw(buffer, (address & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1, data, Size.BYTE);
             }
             case LONG -> {
+                //TODO Battletech does this? or is it just spamming writes all over?
                 assert false;
+                writeBufferRaw(buffer, (address & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1, data >> 16, Size.BYTE);
+                writeBufferRaw(buffer, ((address + 2) & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1, data, Size.BYTE);
             }
         }
     }

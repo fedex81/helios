@@ -181,6 +181,16 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
 
         @Override
         public void write(int address, int value, Size size) {
+            switch (size) {
+                case WORD, BYTE -> writeWord(address, value, size);
+                case LONG -> {
+                    writeWord(address, value >> 16, Size.WORD);
+                    writeWord(address + 2, value, Size.WORD);
+                }
+            }
+        }
+
+        private void writeWord(int address, int value, Size size) {
             assert size != Size.LONG;
             if (size == Size.WORD) {
                 address |= 1; //write LSB only to odd byte

@@ -1,14 +1,17 @@
+14: BattleTech - Gray Death Legion (USA) (Unl).cue
+63: The Adventures of Batman and Robin CD (Prototype - Apr 24, 1995) (hidden-palace.org).iso
+//starts spamming writes, ends up writing to PCM memory
+	at mcd.pcm.McdPcm$McdPcmImpl.read(McdPcm.java:171)
+	at mcd.bus.MegaCdSubCpuBus.read(MegaCdSubCpuBus.java:151)
+	at omegadrive.cpu.m68k.MC68000AddressSpace.readByte(MC68000AddressSpace.java:55)
+
 14: Radical Rex (USA).cue
 java.lang.AssertionError
 	at omegadrive.util.Util.readBufferWord(Util.java:229)
 	at omegadrive.util.BufferUtil.readBuffer(BufferUtil.java:140)
 
-48: Egawa Suguru no Super League CD (Japan).cue
-79: Pro Yakyuu Super League CD (Japan).cue
-java.lang.AssertionError
-	at mcd.asic.Asic.write(Asic.java:72)
 Mortal Kombat JP
-- intro with black lines
+- intro with black lines, WRAM 1M cell rendering?
 
 Lawnmower man EU
 - thinks it's an Audio Disc, mastering issue

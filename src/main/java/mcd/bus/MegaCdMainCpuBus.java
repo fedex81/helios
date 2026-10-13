@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.bus.McdWordRamHelper.MCD_WORD_RAM_CELL_IMAGE_START;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
@@ -102,6 +103,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         return (MdMainBusProvider) mdBus.attachDevice(device); //TODO
     }
 
+    static final int cellWinStart = START_MCD_MAIN_WORD_RAM_MODE1 + MCD_WORD_RAM_CELL_IMAGE_START;
+    static final int cellWinEnd = START_MCD_MAIN_WORD_RAM_MODE1 + MCD_WORD_RAM_2M_SIZE;
     @Override
     public int read(int address, Size size) {
         assert assertCheckBusOp(address, size);
@@ -129,7 +132,12 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                         LOG.info("WRAM DIAG main word ram read at {} pc={} setup {}", th(addr), th(main.getPC()), memCtx.wramSetup);
                     }
                 }
-                res = memCtx.wramHelper.readWordRam(cpu, addr, size);
+
+                if (memCtx.wramSetup.mode == WordRamMode._1M && addr >= cellWinStart && addr < cellWinEnd) {
+                    res = memCtx.wramHelper.readWordCellImage(cpu, addr - cellWinStart, size);
+                } else {
+                    res = memCtx.wramHelper.readWordRam(cpu, addr, size);
+                }
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
                 if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {

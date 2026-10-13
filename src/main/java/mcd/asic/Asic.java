@@ -69,10 +69,15 @@ public class Asic implements AsicOp {
             case MCD_IMG_VCELL -> stampConfig.vCellSize = (value & 0x1F) + 1;
             case MCD_IMG_START_ADDR -> stampConfig.imgDestBufferLocation = value;
             case MCD_IMG_OFFSET -> {
-                assert size != Size.BYTE || (address & 1) == 1;
-                stampConfig.hPixelOffset = value & 7;
-                stampConfig.vPixelOffset = (value >> 3) & 7;
-                stampConfig.imgOffset = value & 0x3F;
+                boolean lsbWritten = size == Size.WORD || (address & 1) == 1;
+                if (lsbWritten) {
+                    stampConfig.hPixelOffset = value & 7;
+                    stampConfig.vPixelOffset = (value >> 3) & 7;
+                    stampConfig.imgOffset = value & 0x3F;
+                } else {
+                    LogHelper.logWarnOnce(LOG, "{} ignoring write on even byte: {} {}",
+                            MCD_IMG_OFFSET, th(address), size);
+                }
             }
             case MCD_IMG_HDOT -> stampConfig.imgWidthPx = value & 0x1FF;
             case MCD_IMG_VDOT -> stampConfig.imgHeightPx = value & 0xFF;
@@ -110,7 +115,6 @@ public class Asic implements AsicOp {
 
     int cd_graphics_x, cd_graphics_dst_x, cd_graphics_y, cd_graphics_dst_y, cd_graphics_dx, cd_graphics_dy;
     int[] cd_graphics_pixels = new int[4];
-    int cycles;
 
     private void doRenderLines(int num) {
         if (num <= 0 || stampConfig.imgHeightPx == 0) {
@@ -128,33 +132,28 @@ public class Asic implements AsicOp {
      * Actual impl lifted from Blastem
      */
     private void doRenderingSlot() {
-        cycles = 0;
         int hLimit = stampConfig.imgWidthPx + stampConfig.hPixelOffset;
         for (int i = 0; i < 4; i++) {
             if (doFetch) {
                 int tvb = (readBuffer(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, Size.WORD) & Size.WORD.getMask()) << 2;
                 //FETCH X
                 cd_graphics_x = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb, Size.WORD) << 8;
-                cycles += 4 * 3;
                 cd_graphics_dst_x = stampConfig.hPixelOffset;
 
                 //FETCH Y
                 cd_graphics_y = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 2, Size.WORD) << 8;
-                cycles += 4 * 2;
 
                 //FETCH DX
                 cd_graphics_dx = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 4, Size.WORD);
                 if ((cd_graphics_dx & 0x8000) > 0) {
                     cd_graphics_dx |= 0xFFFF_0000;
                 }
-                cycles += 4 * 2;
 
                 //FETCH DY
                 cd_graphics_dy = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 6, Size.WORD);
                 if ((cd_graphics_dy & 0x8000) > 0) {
                     cd_graphics_dy |= 0xFFFF_0000;
                 }
-                cycles += 4 * 2;
             }
 
             //PIXEL_I
@@ -163,7 +162,6 @@ public class Asic implements AsicOp {
                 drawPixel();
                 break;
             }
-            cycles += 4 * 2;
         }
     }
 
