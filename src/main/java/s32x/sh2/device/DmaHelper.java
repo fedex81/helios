@@ -16,6 +16,11 @@ public class DmaHelper {
 
     private static final int FIFO_REG_SH2 = 0x2000_4000 + S32xDict.RegSpecS32x.SH2_FIFO_REG.addr;
 
+    //DREQ0 is the 68k -> Sh2 FIFO channel (the only one 68S applies to)
+    public static final int DREQ0_CHANNEL = 0;
+    //DREQ1 is the PWM channel
+    public static final int DREQ1_CHANNEL = 1;
+
     private final static DmaSrcDestMode[] modeVals = DmaSrcDestMode.values();
     private final static DmaTransferSize[] trnVals = DmaTransferSize.values();
 

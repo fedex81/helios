@@ -19,7 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.DmaFifo68k.SH2_FIFO_FULL_BIT;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
+import static s32x.dict.S32xDict.SH2_START_SDRAM_CACHE;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
+import static s32x.sh2.device.DmaHelper.DREQ0_CHANNEL;
+import static s32x.sh2.device.DmaHelper.DREQ1_CHANNEL;
 
 /**
  * Federico Berti
@@ -95,6 +98,104 @@ public class DmaCTest {
         testAllChannelsAutoReqDmaInternal(baseLen, baseLen * 3, baseLen * 2, baseLen * 6);
         beforeEach();
         testAllChannelsAutoReqDmaInternal(baseLen * 3, baseLen, baseLen * 6, baseLen * 2);
+    }
+
+    @Test
+    public void testPwmDreqDoesNotClear68S() {
+        dmaFifo68k.write(MD_DMAC_CTRL, M68K, MD_DMAC_CTRL.addr, 4, Size.WORD);
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+
+        //run a short DREQ-driven transfer on channel 1 (PWM/DREQ1) to SDRAM
+        DmaChannelSetup c = masterDmac.getDmaChannelSetup()[DREQ1_CHANNEL];
+        setupDmaAndStartChannel(c, masterDmac, 4, SH2_START_SDRAM_CACHE,
+                SH2_START_SDRAM_CACHE + 0xE00, true);
+
+        runDreqChannelToCompletion(masterDmac, c.channel);
+
+        Assertions.assertEquals(0, getDmaLen(masterDmac, c.channel));
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+    }
+
+    @Test
+    public void testFifoDreqDoesClear68S() {
+        dmaFifo68k.write(MD_DMAC_CTRL, M68K, MD_DMAC_CTRL.addr, 4, Size.WORD);
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+
+        //run a short DREQ-driven transfer on channel 0 to SDRAM
+        DmaChannelSetup c = masterDmac.getDmaChannelSetup()[DREQ0_CHANNEL];
+        setupDmaAndStartChannel(c, masterDmac, 4, SH2_START_SDRAM_CACHE,
+                SH2_START_SDRAM_CACHE + 0xE00, true);
+
+        runDreqChannelToCompletion(masterDmac, c.channel);
+
+        Assertions.assertEquals(0, getDmaLen(masterDmac, c.channel));
+        Assertions.assertFalse(is68SOn(dmaFifo68k));
+    }
+
+    @Test
+    public void testBothSh2Dreq1DoesNotClear68S() {
+        dmaFifo68k.write(MD_DMAC_CTRL, M68K, MD_DMAC_CTRL.addr, 4, Size.WORD);
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+
+        DmaChannelSetup mc = masterDmac.getDmaChannelSetup()[DREQ1_CHANNEL];
+        DmaChannelSetup sc = slaveDmac.getDmaChannelSetup()[DREQ1_CHANNEL];
+        int dmaLen = 0xE00;
+        int mstart = SH2_START_SDRAM_CACHE, sstart = mstart + 0x100, mend = mstart + dmaLen, send = sstart + dmaLen;
+        setupDmaAndStartChannel(mc, masterDmac, 4, mstart, mend, true);
+        setupDmaAndStartChannel(sc, slaveDmac, 4, sstart, send, true);
+
+        int guard = 0;
+        int mlen = Integer.MAX_VALUE, slen = Integer.MAX_VALUE;
+        do {
+            dmaStepOne(MASTER, masterDmac, true, mc.channel);
+            dmaStepOne(SLAVE, slaveDmac, true, sc.channel);
+            mlen = getDmaLen(masterDmac, mc.channel);
+            slen = getDmaLen(slaveDmac, sc.channel);
+            Assertions.assertTrue(is68SOn(dmaFifo68k));
+        } while ((mlen > 0 || slen > 0) && guard++ < dmaLen + 1);
+        Assertions.assertEquals(0, mlen);
+        Assertions.assertEquals(0, slen);
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+    }
+
+    @Test
+    public void testBothSh2Dreq0SharedFifo68SUntilBothDone() {
+        dmaFifo68k.write(MD_DMAC_CTRL, M68K, MD_DMAC_CTRL.addr, 4, Size.WORD);
+        Assertions.assertTrue(is68SOn(dmaFifo68k));
+
+        DmaChannelSetup mc = masterDmac.getDmaChannelSetup()[DREQ0_CHANNEL];
+        DmaChannelSetup sc = slaveDmac.getDmaChannelSetup()[DREQ0_CHANNEL];
+        int dmaLen = 0x1000;
+        setupDmaAndStartChannel(mc, masterDmac, 4, 0x2000_4012, SH2_START_SDRAM_CACHE + 0x1000, true);
+        setupDmaAndStartChannel(sc, slaveDmac, 4, 0x2000_4012, SH2_START_SDRAM_CACHE + 0x2000, true);
+
+        int guard = 0;
+        int mlen = Integer.MAX_VALUE, slen = Integer.MAX_VALUE;
+        do {
+            fillFifo(dmaFifo68k, fifoData);
+            if (mlen > 0) {
+                dmaStepOne(MASTER, masterDmac, true, mc.channel);
+                mlen = getDmaLen(masterDmac, mc.channel);
+            }
+            if (slen > 0) {
+                dmaStepOne(SLAVE, slaveDmac, true, sc.channel);
+                slen = getDmaLen(slaveDmac, sc.channel);
+            }
+            if (mlen > 0 || slen > 0) {
+                Assertions.assertTrue(is68SOn(dmaFifo68k));
+            }
+        } while ((mlen > 0 || slen > 0) && guard++ < 2000);
+        Assertions.assertEquals(0, mlen);
+        Assertions.assertEquals(0, slen);
+        Assertions.assertFalse(is68SOn(dmaFifo68k));
+    }
+
+    private void runDreqChannelToCompletion(DmaC dmaC, int channel) {
+        int guard = 0;
+        do {
+            dmaStepOne(MASTER, dmaC, true, channel);
+        } while (getDmaLen(dmaC, channel) > 0 && guard++ < 1000);
+        Assertions.assertTrue(guard < 997);
     }
 
     private void testAllChannelsAutoReqDmaInternal(int m0Len, int m1Len, int s0Len, int s1Len) {

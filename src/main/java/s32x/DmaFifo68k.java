@@ -13,9 +13,12 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
+import static s32x.sh2.device.DmaHelper.DREQ0_CHANNEL;
 
 /**
  * Federico Berti
@@ -30,7 +33,6 @@ public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
     public static final int M68K_68S_BIT_POS = 2;
     public static final int SH2_FIFO_FULL_BIT = 15;
     public static final int SH2_FIFO_EMPTY_BIT = 14;
-    public static final int DREQ0_CHANNEL = 0;
     public static final int DMA_FIFO_SIZE = 8;
     public static final int M68K_DMA_FIFO_LEN_MASK = 0xFFFC;
     private final ByteBuffer sysRegsMd, sysRegsSh2;
@@ -139,14 +141,7 @@ public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
     }
 
     @Override
-    public void clear68S(CpuDeviceAccess cpu) {
-        boolean value = dmac[0].isOneDmaInProgress() || dmac[1].isOneDmaInProgress();
-        if (!value) {
-            clear68S();
-        }
-    }
-
-    private void clear68S() {
+    public void clear68S() {
         //set 68S to 0
         BufferUtil.setBit(sysRegsMd, sysRegsSh2, SH2_DREQ_CTRL.addr + 1, M68K_68S_BIT_POS, 0, Size.BYTE);
         ctx.m68S = false;
@@ -186,8 +181,8 @@ public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
         final int lev = ctx.fifo.getLevel();
         if (pm68S && (lev & 3) == 0) { //lev can be 0,4,8
             boolean enable = lev > 0; //lev can be 4,8
-            dmac[CpuDeviceAccess.MASTER.ordinal()].dmaReqTrigger(DREQ0_CHANNEL, enable);
-            dmac[CpuDeviceAccess.SLAVE.ordinal()].dmaReqTrigger(DREQ0_CHANNEL, enable);
+            dmac[MASTER.ordinal()].dmaReqTrigger(DREQ0_CHANNEL, enable);
+            dmac[SLAVE.ordinal()].dmaReqTrigger(DREQ0_CHANNEL, enable);
             if (verbose) LOG.info("DMA ctx.fifo dreq: {}", enable);
         }
     }

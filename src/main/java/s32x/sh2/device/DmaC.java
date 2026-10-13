@@ -16,6 +16,7 @@ import static omegadrive.util.Util.readBufferLong;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
+import static s32x.sh2.device.DmaHelper.DREQ0_CHANNEL;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC0;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC1;
 
@@ -201,26 +202,21 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         writeBufferForChannel(c.channel, DMA_TCR0.addr, Math.max(len, 0), Size.LONG);
     }
 
-    /**
-     * //TODO MASTER doing FIFO -> RAM dma
-     * //TODO SLAVE doing RAM -> PWM dma, when slave is done, this causes the MASTER DMA to stop
-     * //TODO clear68S without checking the other cpu breaks DoomFusion 2.2 (MASTER and SLAVE are both doing DMA)
-     */
     private void dmaEnd(DmaHelper.DmaChannelSetup c, boolean normal) {
         if (c.dmaInProgress) {
             c.dmaInProgress = false;
             c.dreqLevel = false;
             updateOneDmaInProgress();
 
-            if (!c.chcr_autoReq && !oneDmaInProgress) {
-                dma68SHandler.clear68S(cpu);
+            if (!c.chcr_autoReq && c.channel == DREQ0_CHANNEL && !oneDmaInProgress) {
+                dma68SHandler.clear68S();
             }
             //transfer ended normally, ie. TCR = 0
             if (normal) {
                 int chcr = setDmaChannelBitVal(c.channel, DMA_CHCR0.addr + 2, SH2_CHCR_TRANSFER_END_BIT, 1, Size.WORD);
                 DmaHelper.updateChannelControl(c, chcr);
                 if (c.chcr_intEn) {
-                    intControl.setOnChipDeviceIntPending(c.channel == 0 ? DMAC0 : DMAC1);
+                    intControl.setOnChipDeviceIntPending(c.channel == DREQ0_CHANNEL ? DMAC0 : DMAC1);
                 }
             }
             if (verbose) LOG.info("{} DMA stop, aborted: {}, {}", cpu, !normal, c);
