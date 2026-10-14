@@ -7,6 +7,7 @@ import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static mcd.McdGateArrayRegTest.SUB_INT_MASK_ODD;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -28,7 +29,7 @@ public class McdInterruptTest extends McdRegTestBase {
         subCpu.getM68k().setSR(0x2700);
 
         McdSubInterruptHandler interruptHandler = subCpuBus.getInterruptHandler();
-        subCpuBus.write(McdGateArrayRegTest.SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
 
         interruptHandler.raiseInterrupt(INT_ASIC);
         assertNoInterruptTrigger(interruptHandler);
@@ -38,13 +39,34 @@ public class McdInterruptTest extends McdRegTestBase {
         assertOneInterruptTrigger(interruptHandler);
 
         //mask all
-        subCpuBus.write(McdGateArrayRegTest.SUB_INT_MASK_ODD, 0, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0, Size.BYTE);
         interruptHandler.raiseInterrupt(INT_ASIC);
         assertNoInterruptTrigger(interruptHandler);
 
         //unmask all
-        subCpuBus.write(McdGateArrayRegTest.SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
         assertOneInterruptTrigger(interruptHandler);
+    }
+
+    @Test
+    public void testAsicIntClearedOnIen1Disable() {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        subCpu.getM68k().setSR(0x2700);
+
+        var inthandler = subCpuBus.getInterruptHandler();
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+
+        //raise ASIC int while SR masked -> pending (not taken)
+        inthandler.raiseInterrupt(INT_ASIC);
+        assertNoInterruptTrigger(inthandler);
+
+        //disable IEN1, pending state should be cleared
+        subCpuBus.write(SUB_INT_MASK_ODD, 0, Size.BYTE);
+
+        //allow ints and enable IEN1, nothing should fire, the pending ASIC INT was dropped
+        subCpu.getM68k().setSR(0x2000);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        assertNoInterruptTrigger(inthandler);
     }
 
     public static void assertOneInterruptTrigger(McdSubInterruptHandler interruptHandler) {

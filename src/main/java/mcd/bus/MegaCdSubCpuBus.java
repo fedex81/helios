@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.BitRegDef.IEN2;
 import static mcd.dict.MegaCdDict.*;
@@ -296,6 +297,10 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                     //IEN2 shift from bit#2 to bit#7
                     int val = IEN2.getBitMask() * ((reg >> 2) & 1);
                     setBitDefInternal(memCtx, M68K, IEN2, val);
+                    //fixes BatmanReturns option menu freezing on exit
+                    if ((reg & (INT_ASIC.ordinal() << 1)) == 0) {
+                        interruptHandler.lowerInterrupt(INT_ASIC);
+                    }
                 }
             }
             case MCD_TIMER_INT3 -> {
