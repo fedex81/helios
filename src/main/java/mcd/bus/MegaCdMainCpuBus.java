@@ -447,12 +447,9 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         int bitWordPos = IFL2.getBitPos() + 8;
         int subIntReg = (resWord >> bitWordPos) & 1; //IFL2
         if (subIntReg > 0) {
-            if (((prevWord >> bitWordPos) & 1) == 0) {
-                subCpuBus.getInterruptHandler().setIFL2Asserted(true);
-                LogHelper.logInfo(LOG, "M SubCpu int2 request");
-                //TODO should check IEN2 = 1?
-                subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
-            }
+            subCpuBus.getInterruptHandler().setIFL2Asserted(true);
+            LogHelper.logInfo(LOG, "M SubCpu int2 request");
+            subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
         } else if (subIntReg == 0) {
             LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0, ignoring");
         }

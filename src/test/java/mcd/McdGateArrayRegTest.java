@@ -244,11 +244,8 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertNotEquals(0, cnt);
     }
 
-    /**
-     * Arslan Senki - The Heroic Legend of Arslan (hangs at copyright screen)
-     */
     @Test
-    public void testResetReg_IEN2_disable() {
+    public void testResetReg_IEN2_IFL2_unchanged() {
         var interruptHandler = subCpuBus.getInterruptHandler();
         //enable IEN2
         writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
@@ -260,9 +257,34 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         //disable IEN2
         writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0, Size.BYTE);
         val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
-        //IFL2 goes to 0
-        Assertions.assertEquals(0, val & 1);
-        Assertions.assertFalse(interruptHandler.isIFL2Asserted());
+        //IFL2 unchanged
+        Assertions.assertEquals(1, val & 1);
+        Assertions.assertTrue(interruptHandler.isIFL2Asserted());
+    }
+
+    @Test
+    public void testIEN2DisableHoldsPendingInt2() {
+        var interruptHandler = subCpuBus.getInterruptHandler();
+        //enable IEN2
+        writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        //set IFL2
+        int val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
+        writeAddressSize(M68K, MAIN_RESET_REG, val | 1, Size.BYTE);
+        Assertions.assertTrue(interruptHandler.isIFL2Asserted());
+
+        //disable IEN2
+        writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0, Size.BYTE);
+        Assertions.assertTrue(interruptHandler.isIFL2Asserted());
+
+        //while IEN2 is disabled pending INT2 is not delivered, even with SR unmasked
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        subCpu.getM68k().setSR(0x2000);
+        McdInterruptTest.assertNoInterruptTrigger(interruptHandler);
+
+        //enable IEN2, INT2 is now delivered
+        writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        McdInterruptTest.assertOneInterruptTrigger(interruptHandler);
+
     }
 
 }
