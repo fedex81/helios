@@ -20,7 +20,7 @@ package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
 import omegadrive.system.SystemProvider;
-import omegadrive.ui.RenderingStrategy;
+import omegadrive.ui.filter.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;

@@ -28,6 +28,9 @@ import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.perf.Telemetry;
+import omegadrive.ui.filter.BlendFilter;
+import omegadrive.ui.filter.OutputImageFilter;
+import omegadrive.ui.filter.RenderingStrategy;
 import omegadrive.ui.flatlaf.FlatLafHelper;
 import omegadrive.ui.util.IconsLoader;
 import omegadrive.ui.util.UiFileFilters;
@@ -92,6 +95,9 @@ public class SwingWindow implements DisplayWindow {
     private int[] pixelsSrc;
     private int[] pixelsDest;
     private double scale = DEFAULT_SCALE_FACTOR;
+
+    private volatile OutputImageFilter outputFilter = OutputImageFilter.NONE;
+    private final OutputImageFilter.FilterResult filterResult = new OutputImageFilter.FilterResult();
 
     private final JPanel infoPanel = new JPanel();
     private final JPanel statusBar = new JPanel();
@@ -364,6 +370,13 @@ public class SwingWindow implements DisplayWindow {
             menuView.add(themeMenu);
         }
 
+        JMenu videoFilterMenu = new JMenu("Video Filter");
+        ButtonGroup videoFilterGroup = new ButtonGroup();
+        addVideoFilterItem(videoFilterMenu, videoFilterGroup, "None", OutputImageFilter.NONE, true);
+        addVideoFilterItem(videoFilterMenu, videoFilterGroup, "Blend",
+                new BlendFilter(0.5f, 0.5f), false);
+        menuView.add(videoFilterMenu);
+
         soundEnItem = new JCheckBoxMenuItem("Enable Sound", true);
         addKeyAction(soundEnItem, SOUND_ENABLED, e -> handleSystemEvent(SOUND_ENABLED, soundEnItem.getState(), null));
         setting.add(soundEnItem);
@@ -505,9 +518,24 @@ public class SwingWindow implements DisplayWindow {
         statusBar.setMinimumSize(barSize);
     }
 
+    private void addVideoFilterItem(JMenu menu, ButtonGroup group, String label, OutputImageFilter filter,
+                                    boolean selected) {
+        JRadioButtonMenuItem item = new JRadioButtonMenuItem(label, selected);
+        addAction(item, e -> setOutputFilter(filter));
+        group.add(item);
+        menu.add(item);
+    }
+
+    public void setOutputFilter(OutputImageFilter filter) {
+        this.outputFilter = filter == null ? OutputImageFilter.NONE : filter;
+        LOG.info("Output filter set: {}", outputFilter.getName());
+    }
+
     private void renderScreenLinearInternal(int[] data, DisplayContext dc) {
         resizeScreen(dc.videoMode);
-        RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
+
+        OutputImageFilter.FilterResult fr = outputFilter.apply(data, nativeScreenSize, dc.videoMode, filterResult);
+        RenderingStrategy.renderNearest(fr.pixels, pixelsDest, fr.dim, outputScreenSize);
         Optional<String> label = Optional.ofNullable((String) dc.get(LABEL_KEY));
         Optional<Double> fps = Optional.ofNullable((Double) dc.get(FPS_KEY));
         Optional<Long> waitNs = Optional.ofNullable((Long) dc.get(WAIT_NS_KEY));

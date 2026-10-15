@@ -17,6 +17,8 @@
 
 package omegadrive.ui;
 
+import omegadrive.ui.filter.RenderingStrategy;
+
 import java.awt.*;
 import java.util.Arrays;
 import java.util.Random;
@@ -66,16 +68,6 @@ public class RenderingStrategyTest {
         }
     }
 
-    private static void testLinearNew() {
-        System.out.println("testLinearNew - Warmup");
-        //warm-up
-        testLinearNew(10000);
-        System.out.println("testLinearNew");
-        for (int i = 0; i < 6; i++) {
-            testLinearNew(10000);
-        }
-    }
-
     private static void testNearest() {
         System.out.println("testNearest - Warmup");
         //warm-up
@@ -114,17 +106,7 @@ public class RenderingStrategyTest {
         for (int i = 0; i < cycles; i++) {
             screenData = getData(screenData, inputD);
             RenderingStrategyTest.toLinearLine(linear, screenData, inputD);
-//            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
-        }
-        printPerf(System.nanoTime() - start, cycles);
-    }
-
-    private static void testLinearNew(int cycles) {
-        long start = System.nanoTime();
-        //warm-up
-        for (int i = 0; i < cycles; i++) {
-            screenData = getData(screenData, inputD);
-//            RenderingStrategy.toLinearNew(linear, screenData, inputD);
+            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
         }
         printPerf(System.nanoTime() - start, cycles);
     }

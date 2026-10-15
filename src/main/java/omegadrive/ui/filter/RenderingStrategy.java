@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.ui;
+package omegadrive.ui.filter;
 
 import java.awt.*;
 
@@ -34,7 +34,7 @@ public class RenderingStrategy {
     }
 
 
-    protected static void renderNearestOld(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
+    public static void renderNearestOld(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
         int factor = 16;
         int xRatio = ((src.width << factor) / dest.width) + 1;
         int yRatio = ((src.height << factor) / dest.height) + 1;
@@ -52,7 +52,7 @@ public class RenderingStrategy {
 
     private static int[] lineBuf = new int[0];
 
-    protected static void renderNearest(final int[] srcPixels, final int[] outputPixels, Dimension src, Dimension dest) {
+    public static void renderNearest(final int[] srcPixels, final int[] outputPixels, Dimension src, Dimension dest) {
         final int sw = src.width, sh = src.height;
         final int dw = dest.width, dh = dest.height;
         final int factor = 16;
