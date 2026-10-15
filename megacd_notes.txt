@@ -1,5 +1,10 @@
 14: BattleTech - Gray Death Legion (USA) (Unl).cue
 63: The Adventures of Batman and Robin CD (Prototype - Apr 24, 1995) (hidden-palace.org).iso
+2026-10-15 01:04:18.013 ERROR [cycle-Cliffhanger (USA).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError: 104d
+2026-10-15 01:04:18.013 ERROR [cycle-Cliffhanger (USA).cue]
+2026-10-15 07:25:26.632 ERROR [cycle-Adventures of Batman and Robin, The (Europe).cue]
+2026-10-15 04:02:24.646 ERROR [cycle-Adventures of Batman and Robin, The (USA).cue]
+2026-10-14 20:22:27.339 ERROR [cycle-The Adventures of Batman and Robin CD (Prototype - Apr 24, 1995) (hidden-palace.org).iso]
 //starts spamming writes, ends up writing to PCM memory
 	at mcd.pcm.McdPcm$McdPcmImpl.read(McdPcm.java:171)
 	at mcd.bus.MegaCdSubCpuBus.read(MegaCdSubCpuBus.java:151)
@@ -28,6 +33,7 @@ Daihou.. JP
 Earnest Evans
 Jangou world cup
 
+2026-10-15 00:50:18.502 ERROR [cycle-Battletech - Gray Death Legion [Alpha Demo].cue]
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
 	at mcd.pcm.McdPcm.write(McdPcm.java:178)
@@ -49,26 +55,10 @@ Jangou world cup
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
-2026-02-28 16:14:46.140 ERROR [cycle-Mary Shelley's Frankenstein (USA).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
-java.lang.AssertionError: 121:56:8
-	at omegadrive.sound.msumd.CueFileParser.msfToSector(CueFileParser.java:66)
-	at omegadrive.sound.msumd.CueFileParser.msfToSectorAdjustPregap(CueFileParser.java:71)
-	at omegadrive.sound.msumd.CueFileParser.msfToSectorAdjustPregap(CueFileParser.java:75)
-	at mcd.cdd.CddImpl.cdd_process(CddImpl.java:370)
-	at mcd.cdd.CddImpl.writeCommByte(CddImpl.java:149)
-	at mcd.cdd.CddImpl.write(CddImpl.java:113)
-	at mcd.bus.MegaCdSubCpuBus.handleMegaCdExpWriteInternal(MegaCdSubCpuBus.java:262)
-	at mcd.bus.MegaCdSubCpuBus.handleMegaCdExpWrite(MegaCdSubCpuBus.java:240)
-	at mcd.bus.MegaCdSubCpuBus.write(MegaCdSubCpuBus.java:181)
-	at omegadrive.cpu.m68k.MC68000AddressSpace.writeWord(MC68000AddressSpace.java:75)
-	at m68k.cpu.CpuCore.writeMemoryWord(CpuCore.java:952)
-	at m68k.cpu.operand.Operands$AddressRegisterPostIncOperand.setWord(Operands.java:321)
-	at m68k.cpu.instructions.MOVE.move_word(MOVE.java:160)
-	at m68k.cpu.instructions.MOVE$2.execute(MOVE.java:98)
-	at m68k.cpu.MC68000.executePrefetch(MC68000.java:72)
-	at m68k.cpu.MC68000.execute(MC68000.java:58)
-	at omegadrive.cpu.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:91)
-	at mcd.MegaCd.runSub68k(MegaCd.java:148)
+
+//MEGACD MODE1
+2026-10-15 07:17:52.113 ERROR [cycle-Pier Solar and the Great Architects Enhanced Soundtrack Disc (USA).cue]
+2026-10-15 07:44:31.688 ERROR [cycle-Pier Solar and the Great Architects - The Definitive Original Soundtrack (Europe) (Disc 4) (Enhanced Soundtrack Disc).cue]
 
 TODO
 https://github.com/ekeeke/Genesis-Plus-GX/issues/533

@@ -1,5 +1,6 @@
 package omegadrive.sound.msumd;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.digitalmediaserver.cuelib.CueParser;
 import org.digitalmediaserver.cuelib.CueSheet;
@@ -74,7 +75,14 @@ public class CueFileParser {
     }
 
     public static int msfToSectorAdjustPregap(int mH, int mL, int sH, int sL, int fH, int fL) {
-        return msfToSectorAdjustPregap(mH * 10 + mL, sH * 10 + sL, fH * 10 + fL);
+        if (BufferUtil.assertionsEnabled) {
+            //Sega Multimedia - Rave CD v1: mh = 13
+            //Frankenstein: mH = 12
+            if (Math.min(mH, 9) != mH) {
+                LogHelper.logWarnOnce(LOG, "Invalid MSF BCD encoding, mH={}, using 9", mH);
+            }
+        }
+        return msfToSectorAdjustPregap(Math.min(mH, 9) * 10 + Math.min(mL, 9), sH * 10 + sL, fH * 10 + fL);
     }
 
     public static void lbaToMsfAdjustPregap(int sector, MsfHolder h) {

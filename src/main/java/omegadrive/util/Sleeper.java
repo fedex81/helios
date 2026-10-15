@@ -97,7 +97,7 @@ public class Sleeper {
         do {
             //TODO I think this has happened??
             if (intervalNs > maxSleepNs || intervalNs <= 0) {
-                LOG.error("Unexpected Sleep ns: {}", intervalNs);
+                LOG.warn("Unexpected Sleep ns: {}", intervalNs);
                 return;
             }
             LockSupport.parkNanos(intervalNs);
