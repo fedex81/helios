@@ -52,8 +52,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -375,7 +375,7 @@ public class SwingWindow implements DisplayWindow {
         addVideoFilterItem(videoFilterMenu, videoFilterGroup, "None", OutputImageFilter.NONE, true);
         addVideoFilterItem(videoFilterMenu, videoFilterGroup, "Blend",
                 new BlendFilter(0.5f, 0.5f), false);
-        menuView.add(videoFilterMenu);
+        setting.add(videoFilterMenu);
 
         soundEnItem = new JCheckBoxMenuItem("Enable Sound", true);
         addKeyAction(soundEnItem, SOUND_ENABLED, e -> handleSystemEvent(SOUND_ENABLED, soundEnItem.getState(), null));
