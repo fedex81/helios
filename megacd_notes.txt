@@ -5,10 +5,21 @@
 2026-10-15 07:25:26.632 ERROR [cycle-Adventures of Batman and Robin, The (Europe).cue]
 2026-10-15 04:02:24.646 ERROR [cycle-Adventures of Batman and Robin, The (USA).cue]
 2026-10-14 20:22:27.339 ERROR [cycle-The Adventures of Batman and Robin CD (Prototype - Apr 24, 1995) (hidden-palace.org).iso]
-//starts spamming writes, ends up writing to PCM memory
+2026-10-15 00:50:18.502 ERROR [cycle-Battletech - Gray Death Legion [Alpha Demo].cue]
+2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
+2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
+//starts spamming reads/writes, ends up writing to PCM memory
 	at mcd.pcm.McdPcm$McdPcmImpl.read(McdPcm.java:171)
 	at mcd.bus.MegaCdSubCpuBus.read(MegaCdSubCpuBus.java:151)
 	at omegadrive.cpu.m68k.MC68000AddressSpace.readByte(MC68000AddressSpace.java:55)
+
+2026-10-15 00:50:18.502 ERROR [cycle-Battletech - Gray Death Legion [Alpha Demo].cue]
+2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
+2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
+    at mcd.pcm.McdPcm.write(McdPcm.java:178)
+  	at mcd.bus.MegaCdSubCpuBus.write(MegaCdSubCpuBus.java:206)
+ 	at omegadrive.cpu.m68k.MC68000AddressSpace.writeByte(MC68000AddressSpace.java:70)
+ 	at m68k.cpu.CpuCore.writeMemoryByte(CpuCore.java:946)
 
 14: Radical Rex (USA).cue
 java.lang.AssertionError
@@ -32,29 +43,6 @@ Arslan Senki JP - 1st screen after BIOS
 Daihou.. JP
 Earnest Evans
 Jangou world cup
-
-2026-10-15 00:50:18.502 ERROR [cycle-Battletech - Gray Death Legion [Alpha Demo].cue]
-2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
-2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError
-	at mcd.pcm.McdPcm.write(McdPcm.java:178)
-	at mcd.bus.MegaCdSubCpuBus.write(MegaCdSubCpuBus.java:206)
-	at omegadrive.cpu.m68k.MC68000AddressSpace.writeByte(MC68000AddressSpace.java:70)
-	at m68k.cpu.CpuCore.writeMemoryByte(CpuCore.java:946)
-	at m68k.cpu.operand.Operands$AddressRegisterIndirectOperand.setByte(Operands.java:231)
-	at m68k.cpu.instructions.MOVE.move_byte(MOVE.java:151)
-	at m68k.cpu.instructions.MOVE$1.execute(MOVE.java:83)
-	at m68k.cpu.MC68000.executePrefetch(MC68000.java:72)
-	at m68k.cpu.MC68000.execute(MC68000.java:58)
-	at omegadrive.cpu.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:81)
-	at mcd.MegaCd.runSub68k(MegaCd.java:137)
-	at mcd.MegaCd.loop(MegaCd.java:120)
-	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:378)
-	at omegadrive.util.Util.lambda$wrapRunnableEx$4(Util.java:454)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
-	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-	at java.base/java.lang.Thread.run(Thread.java:1583)
 
 //MEGACD MODE1
 2026-10-15 07:17:52.113 ERROR [cycle-Pier Solar and the Great Architects Enhanced Soundtrack Disc (USA).cue]

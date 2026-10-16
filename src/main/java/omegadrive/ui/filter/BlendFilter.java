@@ -58,7 +58,7 @@ public class BlendFilter implements OutputImageFilter {
             horizontalBlend(dst, w, h, hBlend);
         }
         if (vBlend > 0f) {
-
+            verticalBlend(dst, w, h, vBlend);
         }
 
         out.pixels = dst;
