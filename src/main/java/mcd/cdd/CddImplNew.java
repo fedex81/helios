@@ -284,7 +284,7 @@ public class CddImplNew implements Cdd {
             }
 
             /* subcode data processing */
-//            cdd_read_subcode(cddContext.io.sector);
+            cdd_read_subcode(cddContext.io.sector);
             /* track type */
             CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
             boolean isDataTrack = etd.trackDataType != CdModel.TrackDataType.AUDIO;
@@ -508,10 +508,7 @@ public class CddImplNew implements Cdd {
 
         /* seek to current subcode position */
         LogHelper.logWarnOnce(LOG, "TODO subcode seek: {}", seek);
-//                if (cdd.toc.sub)
-//                {
-//                    cdStreamSeek(cdd.toc.sub, lba * 96, SEEK_SET);
-//                }
+        cdd_read_subcode(cddContext.io.sector);
 
         /* no audio track playing (yet) */
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
