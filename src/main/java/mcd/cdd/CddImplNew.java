@@ -513,7 +513,6 @@ public class CddImplNew implements Cdd {
         setTrack(index);
 
         /* seek to current subcode position */
-        LogHelper.logWarnOnce(LOG, "TODO subcode seek: {}", seek);
         cdd_read_subcode(cddContext.io.sector);
 
         /* no audio track playing (yet) */
