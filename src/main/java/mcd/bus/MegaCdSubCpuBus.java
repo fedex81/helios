@@ -36,8 +36,8 @@ import static mcd.util.BuramHelper.writeBackupRam;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
-import static omegadrive.util.BufferUtil.setBit;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.BufferUtil.setBit;
 import static omegadrive.util.Util.*;
 
 /**
@@ -200,18 +200,22 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
+        return switch (size) {
+            case WORD, BYTE -> readExpComponent(address, size);
+            case LONG -> ((readExpComponent(address, Size.WORD) & 0xFFFF) << 16) |
+                    (readExpComponent(address + 2, Size.WORD) & 0xFFFF);
+        };
+    }
+
+    private int readExpComponent(int address, Size size) {
         //0xFF_806A - 0xFF_80FE Reserved
         //0xFF_8100 - 0xFF_817E Subcode buffer area of 64 words x 16 bits
-        //0xFF_8180 - 0xFF_81FE Image of subcode buffer area
+        //0xFF_8180 - 0xFF_81FE Image (mirror) of subcode buffer area
         if ((address & MDC_SUB_GATE_REGS_MASK) >= START_MCD_SUBCODE_BUFFER_LOW_BYTES_MASK) {
 //            LogHelper.logWarnOnce(LOG, "Reading from {}", th(address));
-            return readBuffer(memCtx.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, size);
+            return readBuffer(memCtx.commonGateRegsBuf, address & 0x17f, size);
         }
-        return switch (size) {
-            case WORD, BYTE -> handleMegaCdExpReadInternal(address, size);
-            case LONG -> ((handleMegaCdExpReadInternal(address, Size.WORD) & 0xFFFF) << 16) |
-                    (handleMegaCdExpReadInternal(address + 2, Size.WORD) & 0xFFFF);
-        };
+        return handleMegaCdExpReadInternal(address, size);
     }
 
     private int handleMegaCdExpReadInternal(int address, Size size) {

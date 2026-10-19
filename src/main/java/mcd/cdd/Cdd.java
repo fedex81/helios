@@ -102,7 +102,8 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
     int FLAGS_iMUTE = 0;
 
     //CD_DA fader volume range, 1024 full volume
-    int FADER_MAX = 0x400;
+    int FADER_MAX_BITS = 10;
+    int FADER_MAX = 1 << FADER_MAX_BITS; //0x400
 
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
 

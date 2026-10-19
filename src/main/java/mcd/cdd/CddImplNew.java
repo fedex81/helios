@@ -45,6 +45,7 @@ public class CddImplNew implements Cdd {
     private final Cdc cdc;
     private PcmProvider playSupport;
     private ExtendedCueSheet extCueSheet;
+    private SubcodeHelper subcodeHelper;
 
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
     private boolean hasMedia;
@@ -78,6 +79,7 @@ public class CddImplNew implements Cdd {
             return;
         }
         initReadingTOC();
+        subcodeHelper = SubcodeHelper.create(memoryContext, extCueSheet.cuePath);
         LOG.info("Using disc: {}", extCueSheet);
     }
 
@@ -330,7 +332,7 @@ public class CddImplNew implements Cdd {
     }
 
     private void cdd_read_subcode(int lba) {
-        SubcodeHelper.cdd_process_subcode(memoryContext, lba);
+        subcodeHelper.cdd_process_subcode(lba);
         interruptHandler.raiseInterrupt(INT_SUBCODE);
     }
 
@@ -755,7 +757,7 @@ public class CddImplNew implements Cdd {
     private int applyFader(int sample) {
         int curVol = cddContext.faderVol;
         int mul = ((curVol & 0x7FC) != 0) ? curVol & 0x7FC : curVol & 3;
-        return sample * mul;
+        return (sample * mul) >> FADER_MAX_BITS;
     }
 
     private void stepFader() {

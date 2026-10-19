@@ -125,16 +125,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 return readHintVector(addr, size);
             }
             if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
-                if (assertionsEnabled) {
-                    if (McdWordRamHelper.WRAM_DIAG && memCtx.wramSetup.cpu == SUB_M68K
-                            && memCtx.wramSetup.mode == WordRamMode._2M) {
-                        MC68000Wrapper main = mdBus.getBusDeviceIfAny(MC68000Wrapper.class).get();
-                        LOG.info("WRAM DIAG main word ram read at {} pc={} setup {}", th(addr), th(main.getPC()), memCtx.wramSetup);
-                    }
-                }
-
                 if (memCtx.wramSetup.mode == WordRamMode._1M && addr >= cellWinStart && addr < cellWinEnd) {
-                    res = memCtx.wramHelper.readWordCellImage(cpu, addr - cellWinStart, size);
+                    res = memCtx.wramHelper.readWordRamMainCell(addr, size);
                 } else {
                     res = memCtx.wramHelper.readWordRam(cpu, addr, size);
                 }
@@ -185,6 +177,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                     VRAM cell image mapped at $220_000-$23F_FFF
                 */
                 memCtx.wramHelper.writeWordRam(cpu, addr & MCD_WORD_RAM_2M_MASK, data, size);
+                //TODO mmh check
+//                memCtx.wramHelper.writeWordRamMainCell(addr & MCD_WORD_RAM_2M_MASK, data, size);
                 return;
             }
         }

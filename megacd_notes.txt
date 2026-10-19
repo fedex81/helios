@@ -1,3 +1,6 @@
+- Cdd.test01
+- de-emphasis
+
 14: BattleTech - Gray Death Legion (USA) (Unl).cue
 63: The Adventures of Batman and Robin CD (Prototype - Apr 24, 1995) (hidden-palace.org).iso
 2026-10-15 01:04:18.013 ERROR [cycle-Cliffhanger (USA).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError: 104d

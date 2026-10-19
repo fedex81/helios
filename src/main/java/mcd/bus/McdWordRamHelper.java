@@ -2,6 +2,7 @@ package mcd.bus;
 
 import mcd.asic.AsicModel.StampPriorityMode;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.util.McdWramCell;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 
@@ -460,10 +461,56 @@ public class McdWordRamHelper {
         };
     }
 
+    public int readWordRamMainCell(int address, Size size) {
+        if (memoryContext.wramSetup.mode != _1M) {
+            return readWordRam(M68K, address, size);
+        }
+        return switch (size) {
+            case WORD -> readWordRamCellWord(address);
+            case LONG -> (readWordRamCellWord(address) << 16) | readWordRamCellWord(address + 2);
+            case BYTE -> {
+                int bank = getBank1M(memoryContext.wramSetup, M68K);
+                int lin = McdWramCell.cellToLinear(address & MCD_WORD_RAM_1M_MASK, false);
+                yield Util.readDataByte(wordRam01[bank], lin & MCD_WORD_RAM_1M_MASK);
+            }
+        };
+    }
+
+    public void writeWordRamMainCell(int address, int value, Size size) {
+        if (memoryContext.wramSetup.mode != _1M) {
+            writeWordRam(M68K, address, value, size);
+            return;
+        }
+        switch (size) {
+            case WORD -> writeWordRamCellWord(address, value);
+            case LONG -> {
+                writeWordRamCellWord(address, value >> 16);
+                writeWordRamCellWord(address + 2, value);
+            }
+            case BYTE -> {
+                int bank = getBank1M(memoryContext.wramSetup, M68K);
+                int lin = McdWramCell.cellToLinear(address & MCD_WORD_RAM_1M_MASK, false);
+                Util.writeDataByte(wordRam01[bank], lin & MCD_WORD_RAM_1M_MASK, value);
+            }
+        }
+    }
+
     private void writeCell(int a, int value) {
         int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
         int otherBank = ~assignedBank & 1;
         writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
+    }
+
+    private int readWordRamCellWord(int address) {
+        int bank = getBank1M(memoryContext.wramSetup, M68K);
+        int lin = McdWramCell.cellToLinear(address & MCD_WORD_RAM_1M_MASK, true);
+        return Util.readDataWord(wordRam01[bank], lin & MCD_WORD_RAM_1M_MASK & ~1);
+    }
+
+    private void writeWordRamCellWord(int address, int value) {
+        int bank = getBank1M(memoryContext.wramSetup, M68K);
+        int lin = McdWramCell.cellToLinear(address & MCD_WORD_RAM_1M_MASK, true);
+        Util.writeDataWord(wordRam01[bank], lin & MCD_WORD_RAM_1M_MASK & ~1, value);
     }
 
     public void resetState() {

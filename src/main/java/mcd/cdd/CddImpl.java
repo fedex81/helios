@@ -290,7 +290,7 @@ class CddImpl implements Cdd {
     }
 
     private void cdd_read_subcode(int lba) {
-        SubcodeHelper.cdd_process_subcode(memoryContext, lba);
+//        subcodeHelper.cdd_process_subcode(memoryContext, lba);
         interruptHandler.raiseInterrupt(INT_SUBCODE);
     }
 
