@@ -1,6 +1,7 @@
 package mcd.cd;
 
 import mcd.McdRegTestBase;
+import mcd.cdd.Cdd;
 import mcd.cdd.Cdd.CddCommand;
 import mcd.cdd.Cdd.CddContext;
 import mcd.cdd.Cdd.CddRequest;
@@ -292,6 +293,41 @@ public class CddTest extends McdRegTestBase {
     private String getStatusString() {
         CddContext context = lc.cdd.getCddContext();
         return CddLogDecoder.toTestString(context.statusRegs);
+    }
+
+    @Test
+
+    public void testFader() {
+        CddContext ctx = lc.cdd.getCddContext();
+        Assertions.assertEquals(Cdd.FADER_MAX, ctx.faderVol);
+        Assertions.assertEquals(Cdd.FADER_MAX, ctx.faderTarget);
+
+        lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0x4000, Size.WORD); // >> 4 = 0x400 full
+        Assertions.assertEquals(0x400, ctx.faderTarget);
+        lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0, Size.WORD); // fade to mute
+        Assertions.assertEquals(0, ctx.faderTarget);
+        lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0x2000, Size.WORD); // fade to mute
+        Assertions.assertEquals(0x200, ctx.faderTarget);
+
+        //per-sample fade stepping
+        ctx.faderVol = 0x200;
+        ctx.faderTarget = 0x204;
+
+        for (int i = 0; i < 4; i++) {
+            lc.cdd.stepCdda();
+        }
+
+        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+        ctx.faderTarget = 0x200;
+        for (int i = 0; i < 4; i++) {
+            lc.cdd.stepCdda();
+        }
+        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+
+        //at target, no further movement
+        lc.cdd.stepCdda();
+        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+
     }
 
     /**

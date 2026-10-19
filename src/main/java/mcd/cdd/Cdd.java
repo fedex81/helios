@@ -101,6 +101,9 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
     int FLAGS_aMUTE = 1;
     int FLAGS_iMUTE = 0;
 
+    //CD_DA fader volume range, 1024 full volume
+    int FADER_MAX = 0x400;
+
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
 
     void setPcmProvider(PcmProvider pp);
@@ -153,6 +156,7 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
         public int hostClockEnable;
         public int[] statusRegs = new int[CDD_REG_NUM];
         public int[] commandRegs = new int[CDD_REG_NUM];
+        public int faderVol = FADER_MAX, faderTarget = FADER_MAX;
 
         public static CddContext create(CddIo cddIo) {
             CddContext c = new CddContext();

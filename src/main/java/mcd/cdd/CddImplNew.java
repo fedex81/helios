@@ -88,6 +88,7 @@ public class CddImplNew implements Cdd {
         cdc.setMedia(extCueSheet);
         cddContext.commandRegs[0] = CddCommand.Stop.ordinal();
         cddContext.io.latency = -1;
+        cddContext.faderVol = cddContext.faderTarget = FADER_MAX;
         cdd_process();
 //        setIoStatus(Stopped);
 //        updateStatus(1, NotReady.ordinal());
@@ -128,6 +129,9 @@ public class CddImplNew implements Cdd {
             case MCD_CD_FADER -> {
                 assert size == Size.WORD; //ignore write
                 //bit15 should be 0 when reading, end of fade data transfer
+                cddContext.faderTarget = (value >> 4) & 0xFFF;
+                if (verboseReg) LOG.info("CD fader target: {}", cddContext.faderTarget);
+
             }
             default -> {
                 LOG.error("S CDD Write {}: {} {} {}", regSpec, th(address), th(value), size);
@@ -723,6 +727,9 @@ public class CddImplNew implements Cdd {
                 }
             }
         }
+        left = applyFader(left);
+        right = applyFader(right);
+        stepFader();
         playSupport.playSample(left >> PCM_VOLUME_SHIFT, right >> PCM_VOLUME_SHIFT);
     }
 
@@ -740,6 +747,24 @@ public class CddImplNew implements Cdd {
         LogHelper.logWarnOnce(LOG, "Check leadOut??");
         setIoStatus(LeadOut);
         setTrack(LEADOUTNUM);
+    }
+
+    //fader multiplier, for vol >= 4 use the top 10 bits, for 0..3 use the raw vol value
+    // 0,1,2,3,4,8, ...., 1020, 1024
+
+    private int applyFader(int sample) {
+        int curVol = cddContext.faderVol;
+        int mul = ((curVol & 0x7FC) != 0) ? curVol & 0x7FC : curVol & 3;
+        return sample * mul;
+    }
+
+    private void stepFader() {
+        int cur = cddContext.faderVol, tgt = cddContext.faderTarget;
+        if (cur < tgt) {
+            cddContext.faderVol = cur + 1;
+        } else if (cur > tgt) {
+            cddContext.faderVol = cur - 1;
+        }
     }
 
     //reg36 MSB
