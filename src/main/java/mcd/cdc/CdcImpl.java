@@ -61,6 +61,9 @@ public class CdcImpl implements Cdc {
 
     private boolean hasMedia;
 
+    private long cdcStep = 0;
+    private long decoderActiveUntilStep = Long.MIN_VALUE;
+
     public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, McdPcm pcm) {
         memoryContext = mc;
         interruptHandler = ih;
@@ -384,9 +387,17 @@ public class CdcImpl implements Cdc {
      * this needs to be called at ~ 32.55 Khz
      */
     public void step(int cycles) {
+        cdcStep++;
         cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
         //TODO check, should this be set when reading the register?
         setTimerBuffer();
+    }
+
+    @Override
+    public void clearDecoderIrqIfExpired() {
+        if (cdcContext.irq.decoder.pending > 0 && cdcStep > decoderActiveUntilStep) {
+            cdcContext.irq.decoder.pending = 0;
+        }
     }
 
     private void updateCdcMode4() {
@@ -415,18 +426,13 @@ public class CdcImpl implements Cdc {
         pending |= irq.decoder.enable & irq.decoder.pending;
         pending |= irq.transfer.enable & irq.transfer.pending;
 //        pending |= irq.command.enable & irq.command.pending; //unused
-        if (wasPending == 0 && pending > 0) {
-            if (verbose) LOG.info("CDC interrupt");
+        if (pending > 0) {
+            if (verbose && wasPending == 0) LOG.info("CDC interrupt");
             interruptHandler.raiseInterrupt(INT_CDC);
         } else {
             interruptHandler.lowerInterrupt(INT_CDC);
         }
         wasPending = pending;
-    }
-
-    @Override
-    public void decode(int sector) {
-        assert false;
     }
 
     @Override
@@ -448,6 +454,8 @@ public class CdcImpl implements Cdc {
             cdcContext.header.mode = ExtendedCueSheet.isAudioTrack(cueSheet, track) ? 0 : 1;
             /* set !VALST */
             cdcContext.decoder.valid = 1;
+
+            decoderActiveUntilStep = cdcStep + DECODER_ACTIVE_STEPS;
 
             /* pending decoder interrupt */
             cdcContext.irq.decoder.pending = 1;
@@ -572,10 +580,5 @@ public class CdcImpl implements Cdc {
     @Override
     public void dma() {
         transferHelper.dma();
-    }
-
-    @Override
-    public void step75hz() {
-        assert false;
     }
 }

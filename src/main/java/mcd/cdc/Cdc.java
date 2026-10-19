@@ -29,21 +29,26 @@ public interface Cdc extends BufferUtil.StepDevice {
     Logger LOG = LogHelper.getLogger(Cdc.class.getSimpleName());
 
     int RAM_SIZE = 0x4000;
+    /**
+     * 695 steps at 32.55khz ~= 267000 cycles @ 12.5Mhz
+     */
+    int DECODER_ACTIVE_STEPS = 695;
+
     void write(RegSpecMcd regSpec, int address, int value, Size size);
 
     int read(RegSpecMcd regSpec, int address, Size size);
 
     void setMedia(ExtendedCueSheet extCueSheet);
-    void decode(int sector);
 
     void poll();
 
     void dma();
 
-    void step75hz();
-
     default void cdc_decoder_update(int sector, int track, CddStatus status) {
         assert false;
+    }
+
+    default void clearDecoderIrqIfExpired() {
     }
 
     CdcModel.CdcContext getContext();
