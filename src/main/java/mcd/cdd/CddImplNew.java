@@ -84,7 +84,6 @@ public class CddImplNew implements Cdd {
     }
 
     private void initReadingTOC() {
-//        cddContext.io.latency = (1 + 10 * CD_LATENCY);
         setSector(-300); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
@@ -92,9 +91,6 @@ public class CddImplNew implements Cdd {
         cddContext.io.latency = -1;
         cddContext.faderVol = cddContext.faderTarget = FADER_MAX;
         cdd_process();
-//        setIoStatus(Stopped);
-//        updateStatus(1, NotReady.ordinal());
-//        updateStatus(8, getFlags());
     }
 
     @Override
@@ -271,17 +267,7 @@ public class CddImplNew implements Cdd {
         }
 
         /* reading disc */
-        if (cddContext.io.status == Playing || cddContext.io.status == Paused) {
-            if (cddContext.io.status == Paused && cddContext.io.sector > pauseLbaTarget + 5) {
-                if (cddContext.io.sector > pauseLbaTarget + 10) {
-                    if (verbose) LOG.info("{} Reset LBA target {} -> {}", cddContext.io.status, pauseLbaTarget, -1);
-                    setPauseLbaTarget(-1);
-                } else {
-                    int prev = cddContext.io.sector;
-                    setSector(pauseLbaTarget - LBA_READAHEAD_LEN);
-                    if (verbose) LOG.info("{} rollback LBA {} -> {}", cddContext.io.status, prev, cddContext.io.sector);
-                }
-            }
+        if (cddContext.io.status == Playing) {
             /* end of disc detection */
             if (cddContext.io.sector >= extCueSheet.sectorEnd) { //cdd.toc.last){
                 setIoStatus(LeadOut);
@@ -465,7 +451,9 @@ public class CddImplNew implements Cdd {
                 cddContext.commandRegs[7]);
         CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
         extraInfo.append("lba " + lba + ", msf " + msfHolder);
-        lba -= LBA_READAHEAD_LEN;
+        if (cddContext.io.status != Playing) {
+            lba -= LBA_READAHEAD_LEN;
+        }
 
         /* CD drive latency */
         if (cddContext.io.latency == 0) {
