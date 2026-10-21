@@ -1,6 +1,7 @@
 package mcd.asic;
 
 import mcd.McdRegTestBase;
+import mcd.bus.McdWordRamHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
@@ -30,13 +31,14 @@ public class AsicTest extends McdRegTestBase {
 
     static String folderBase = "src/test/resources/megacd/asic/";
 
-    static Path testFilePathBefore = Paths.get(folderBase, "wram_before.txt.zip");
-    static Path testFilePathAfter = Paths.get(folderBase, "wram_after.txt.zip");
+    public final static Path testFilePathBefore = Paths.get(folderBase, "wram_before.txt.zip");
+    public final static Path testFilePathAfter = Paths.get(folderBase, "wram_after.txt.zip");
+
 
     @Test
     public void testAsic() {
         McdWordRamTest.setWramSub2M(lc);
-        copyFileToWram(testFilePathBefore);
+        copyFileToWram(lc.memoryContext.wramHelper, testFilePathBefore);
 
         //set ASIC registers
         asicRegWordWrite(MCD_IMG_STAMP_SIZE, (0 << 8) | 7);  //make sure GRON=0
@@ -53,10 +55,10 @@ public class AsicTest extends McdRegTestBase {
             lc.asic.step(0);
             linesLeft = lc.asic.read(MCD_IMG_VDOT, MCD_IMG_VDOT.addr, Size.WORD);
         } while (linesLeft > 0);
-        compareFileToWram(testFilePathAfter);
+        compareFileToWram(lc.memoryContext.wramHelper, testFilePathAfter);
     }
 
-    private List<Integer> toListOf16bitWords(Path path) {
+    static List<Integer> toListOf16bitWords(Path path) {
         byte[] content = FileUtil.readBinaryFile(path, ".txt");
         String str = new String(content).replace("\n", "");
         List<Integer> il = new ArrayList<>();
@@ -64,21 +66,21 @@ public class AsicTest extends McdRegTestBase {
         return il;
     }
 
-    private void copyFileToWram(Path path) {
+    public static void copyFileToWram(McdWordRamHelper wramHelper, Path path) {
         List<Integer> il = toListOf16bitWords(path);
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
             int index = (i - START_MCD_SUB_WORD_RAM_2M) >> 1;
-            lc.memoryContext.wramHelper.writeWordRam(SUB_M68K, i, il.get(index), Size.WORD);
+            wramHelper.writeWordRamAsic(i, il.get(index));
         }
         //        printWram(lc.memoryContext);
     }
 
-    private void compareFileToWram(Path path) {
+    public static void compareFileToWram(McdWordRamHelper wramHelper, Path path) {
         List<Integer> il = toListOf16bitWords(path);
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
             int index = (i - START_MCD_SUB_WORD_RAM_2M) >> 1;
             int actual = il.get(index);
-            int exp = lc.memoryContext.wramHelper.readWordRam(SUB_M68K, i, Size.WORD);
+            int exp = wramHelper.readWordRamAsic(i);
             Assertions.assertEquals(exp, actual);
         }
         //        printWram(lc.memoryContext);

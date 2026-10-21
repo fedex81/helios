@@ -109,6 +109,16 @@ public class McdWordRamHelper {
         }
     }
 
+
+    public int readWordRamAsic(int address) {
+        return readWordRamBank(getBank(memoryContext.wramSetup, SUB_M68K, address), address);
+    }
+
+    public void writeWordRamAsic(int address, int value) {
+        writeWordRamBank(getBank(memoryContext.wramSetup, SUB_M68K, address), address, value);
+    }
+
+
     public void writeWordRamBank(int bank, int address, int value) {
         Util.writeDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address), value);
     }
