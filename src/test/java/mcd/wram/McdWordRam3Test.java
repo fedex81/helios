@@ -1,11 +1,14 @@
 package mcd.wram;
 
 import mcd.McdRegTestBase;
+import mcd.dict.MegaCdMemoryContext.WramSetup;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static mcd.bus.McdWordRamHelper.getAddress;
+import static mcd.bus.McdWordRamHelper.getBank;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
@@ -52,5 +55,23 @@ public class McdWordRam3Test extends McdRegTestBase {
         writeAddressSize(M68K, 0x20_6c11, 0xAB, Size.BYTE);
         int res = readAddressSize(M68K, 0x20_6c10, Size.LONG);
         Assertions.assertEquals(0x12ab5678, res);
+    }
+
+    @Test
+    public void test2MInterleave() {
+        WramSetup ws = WramSetup.W_2M_MAIN;
+
+        //word 0 -> bank0 @ 0, word 1 -> bank 1 @ 0
+        Assertions.assertEquals(0, getBank(ws, M68K, 0));
+        Assertions.assertEquals(0, getAddress(ws, 0));
+        Assertions.assertEquals(1, getBank(ws, M68K, 2));
+        Assertions.assertEquals(0, getAddress(ws, 2));
+
+        //word 2 -> bank0 @ 2, word 3 -> bank 1 @ 2
+        Assertions.assertEquals(0, getBank(ws, M68K, 4));
+        Assertions.assertEquals(2, getAddress(ws, 4));
+        Assertions.assertEquals(1, getBank(ws, M68K, 6));
+        Assertions.assertEquals(2, getAddress(ws, 6));
+
     }
 }

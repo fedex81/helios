@@ -141,7 +141,7 @@ public class McdWordRamHelper {
 
     public static int getAddress(WramSetup wramSetup, int address) {
         if (wramSetup.mode == _2M) {
-            return ((address & MCD_WORD_RAM_2M_MASK) >> 1) & ~1; //TODO test
+            return ((address & MCD_WORD_RAM_2M_MASK) >> 1) & ~1;
         }
         return address & MCD_WORD_RAM_1M_MASK;
     }
