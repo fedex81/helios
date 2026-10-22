@@ -50,7 +50,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
-    private boolean busHasFastMemAttached;
 
     //TODO this should be in the VDP
     private final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
@@ -61,12 +60,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
         d.memoryInterface = memoryInterface;
-        d.init();
         return d;
-    }
-
-    private void init() {
-        busHasFastMemAttached = busProvider.isSvp() || busProvider.getSystem().getSystemType().isMegaCdAttached();
     }
 
     public DmaMode setupDma(MdVdpProvider.VramMode vramMode, int data, boolean m1) {
@@ -86,44 +80,16 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void handleDmaFastMemory() {
-        //TODO svp is not set on bootstrap, need to re-eval every time
-        boolean fastMem = busHasFastMemAttached || busProvider.isSvp();
-        if (!fastMem || dmaMode != DmaMode.MEM_TO_VRAM) {
+        if (dmaMode != DmaMode.MEM_TO_VRAM) {
             return;
         }
-        int dmaSrcHigh = vdpProvider.getRegisterData(DMA_SOURCE_HIGH);
-        /* Transfer from SVP ROM/RAM ($000000-$3fffff)*/
-        boolean svpDma = busProvider.isSvp() && (dmaSrcHigh & 0x60) == 0;
-        /* Transfer from MEGACD
-                    WRAM_1M($600_000-$63f_fff)
-                    WRAM_2M($200_000-$23f_fff)
-                    PRGRAM ($020_000-$03f_fff)
-        */
-        boolean isMegaCd = busProvider.getSystem().getSystemType().isMegaCdAttached();
-        //TODO mode1
-        //wram_1M: [0x30, 0x32) << 1
-        //wram_2M: [0x10, 0x12) << 1
-        boolean megaCdDma = isMegaCd && (
-                ((dmaSrcHigh & 0xFE) == 0x30) ||
-                        ((dmaSrcHigh & 0xFE) == 0x10)
-        );
+        int scrAddr = getSourceAddress() << 1;
+        if (busProvider.isVdpDmaFastSource(scrAddr)) {
 
-        //TODO test, uses prgRam,
-        //Amazing Spider-Man vs. The Kingpin, The (USA) just one transfer, any other sw?
-        //MegaCd DMA src address: 3 (70000), fastMem: false (ONCE) -> mode1 0x47EFF2
-        if (isMegaCd && (dmaSrcHigh & 0xFF) == 1) {
-            megaCdDma = true;
-            LogHelper.logWarnOnce(LOG, "DMA from prgRam: {}, len: {}", th(getSourceAddress() << 1), getDmaLength());
-        }
-        LogHelper.logWarnOnce(LOG, "MegaCd DMA src address: {} ({}), fastMem: {}",
-                th(dmaSrcHigh), th(getSourceAddress() << 1 & 0xFF_0000), megaCdDma);
-        if (megaCdDma || svpDma) {
-//            LogHelper.logWarnOnce(LOG, "FastDma, {}", getDmaStateStringNoVdp());
-            //TODO fix and test
-            //Snatcher OK, Willy beamish KO
             //dest0 gets openBus, src0 goes to dest1, etc
             vdpProvider.fifoPush(getDestAddress(), busProvider.getOpenBusWord());
             increaseDestAddress();
+            //TODO adding this -> snatcher, Lunar Ok, Beamish KO
             if (getDmaLength() > 1) {
                 decreaseDmaLength();
             }

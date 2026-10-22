@@ -67,8 +67,12 @@ public class SystemTestUtil {
     }
 
     public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
+        return setupNewMdSystem(cpuMem1, vdpMem, new MdBus());
+    }
+
+    public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem,
+                                                     MdMainBusProvider busProvider) {
         SystemProvider systemProvider = createTestMdProvider(cpuMem1);
-        MdMainBusProvider busProvider = new MdBus();
         busProvider.attachDevice(systemProvider);
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);

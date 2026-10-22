@@ -411,6 +411,10 @@ public interface MdMainBusProvider extends MdM68kBusProvider, Z80BusProvider {
         throw new RuntimeException("Open bus not supported");
     }
 
+    default boolean isVdpDmaFastSource(int srcAddress) {
+        return false;
+    }
+
     default int[] getMapperData() {
         return EMPTY;
     }

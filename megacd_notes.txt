@@ -24,7 +24,7 @@
  	at omegadrive.cpu.m68k.MC68000AddressSpace.writeByte(MC68000AddressSpace.java:70)
  	at m68k.cpu.CpuCore.writeMemoryByte(CpuCore.java:946)
 
-14: Radical Rex (USA).cue
+14: Radical Rex (USA).cue, but then it works??
 java.lang.AssertionError
 	at omegadrive.util.Util.readBufferWord(Util.java:229)
 	at omegadrive.util.BufferUtil.readBuffer(BufferUtil.java:140)
@@ -32,13 +32,13 @@ java.lang.AssertionError
 Mortal Kombat JP
 - intro with black lines, WRAM 1M cell rendering?
 
+Adv Willy Beamish
+- stuck after intro?
+
 Lawnmower man EU
 - thinks it's an Audio Disc, mastering issue
 Flashback DEMO EU
 - Odd PCM DMA length: 2047, addr: 0 (ONCE)
-
-Batman Returns EU
-- problem with Asic generated sprites, I think transparency vs MD layer is not handled correctly
 
 not working
 Aisle Lord JP - freeze after BIOS

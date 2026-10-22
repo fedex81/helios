@@ -102,6 +102,11 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
     }
 
     @Override
+    public boolean isVdpDmaFastSource(int srcAddress) {
+        return mcdMainBus.isVdpDmaFastSource(srcAddress);
+    }
+
+    @Override
     public int getOpenBusWord() {
         return mdBus.getOpenBusWord();
     }

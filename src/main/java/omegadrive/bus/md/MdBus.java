@@ -894,6 +894,12 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         this.mapper = backupMemMapper;
     }
 
+    @Override
+    public boolean isVdpDmaFastSource(int srcAddress) {
+        /* Transfer from SVP ROM/RAM ($000000-$3fffff) has 1 word latency */
+        return isSvp() && (srcAddress & 0xC0_0000) == 0;
+    }
+
     private boolean canM68kAccessZ80Bus() {
         return z80BusRequested && !z80ResetState;
     }

@@ -471,6 +471,17 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     }
 
     @Override
+    public boolean isVdpDmaFastSource(int srcAddress) {
+        return isWordRamDmaSource(srcAddress, enableMode1);
+    }
+
+    public static boolean isWordRamDmaSource(int srcAddress, boolean enableMode1) {
+        int base = enableMode1 ? START_MCD_MAIN_WORD_RAM_MODE1 : START_MCD_MAIN_WORD_RAM;
+        int size = END_MCD_MAIN_WORD_RAM_MIRROR - START_MCD_MAIN_WORD_RAM;
+        return srcAddress >= base && srcAddress < base + size;
+    }
+
+    @Override
     public void setSubDevices(MC68000Wrapper subCpu, MegaCdSubCpuBusIntf subBus) {
         Objects.requireNonNull(subBus);
         Objects.requireNonNull(subCpu);
