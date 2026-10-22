@@ -354,7 +354,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             } //not writable
             case MCD_COMM_FLAGS -> {
                 //main can only write to MSB (even byte), WORD write becomes a BYTE write
-//                assert size == Size.BYTE ? (address & 1) == 0 : true;
                 address &= ~1;
                 LogHelper.logInfo(LOG, "M write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, Size.BYTE);

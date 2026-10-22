@@ -285,7 +285,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             case MCD_MEM_MODE -> handleReg2Write(address, data, size);
             case MCD_COMM_FLAGS -> {
                 //sub can only write to LSB (odd byte), WORD write becomes a BYTE write
-//                assert size == Size.BYTE ? (address & 1) == 1 : true;
                 address |= 1;
                 LogHelper.logInfo(LOG, "S write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeReg(memCtx, cpuType, regSpec, address, data, Size.BYTE);

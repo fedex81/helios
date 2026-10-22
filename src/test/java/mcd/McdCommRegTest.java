@@ -93,6 +93,25 @@ public class McdCommRegTest extends McdRegTestBase {
         writeSubRegWord(MCD_COMM_FLAGS, 0xCCDD);
         checkWordValue.accept(0xBBDD);
 
+        //MAIN WORD write, MSB takes the word's low byte (0xAA)
+        //high byte (0x11, D8-D15) is ignored
+        writeMainRegWord(MCD_COMM_FLAGS, 0x11AA);
+        checkWordValue.accept(0xAADD);
+
+        //restore MSB to 0xBB
+        writeMainRegWord(MCD_COMM_FLAGS, 0x00BB);
+        checkWordValue.accept(0xBBDD);
+
+        //SUB word write, LSB takes the word's LOW byte (0xAA)
+        //high byte (0x11, D8-D15) is ignored
+        writeSubRegWord(MCD_COMM_FLAGS, 0x11AA);
+        checkWordValue.accept(0xBBAA);
+
+        //restore
+        writeSubRegWord(MCD_COMM_FLAGS, 0x00DD);
+        checkWordValue.accept(0xBBDD);
+
+
         writeMainRegOddByte(MCD_COMM_FLAGS, 0xEE);
         checkWordValue.accept(0xEEDD);
 

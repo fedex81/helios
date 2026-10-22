@@ -305,10 +305,14 @@ public class McdWordRamHelper {
         setSharedBitBothCpu(memoryContext, RET, reg1);
         setSharedBitBothCpu(memoryContext, DMNA, reg1);
         setSharedBitBothCpu(memoryContext, MODE, reg1);
-        setBitDefInternal(memoryContext, SUB_M68K, PM0, reg1);
-        setBitDefInternal(memoryContext, SUB_M68K, PM1, reg1);
-        setBitDefInternal(memoryContext, M68K, BK0, reg1);
-        setBitDefInternal(memoryContext, M68K, BK1, reg1);
+        if (c == SUB_M68K) {
+            setBitDefInternal(memoryContext, SUB_M68K, PM0, reg1);
+            setBitDefInternal(memoryContext, SUB_M68K, PM1, reg1);
+        }
+        if (c == M68K) {
+            setBitDefInternal(memoryContext, M68K, BK0, reg1);
+            setBitDefInternal(memoryContext, M68K, BK1, reg1);
+        }
 
         //deriveWramSetupGpgx
         if ((reg1 & MODE.getBitMask()) != 0) {
