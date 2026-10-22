@@ -287,4 +287,36 @@ public class McdGateArrayRegTest extends McdRegTestBase {
 
     }
 
+    @Test
+    public void testTimerInt3IsLsbOnly() {
+        //WORD write: MSB 0xAA ignored, LSB= 0xBB, MSB stays 0
+        writeSubRegWord(MCD_TIMER_INT3, 0xAABB);
+        Assertions.assertEquals(0xBB, readSubRegOdd(MCD_TIMER_INT3));
+        Assertions.assertEquals(0, readSubRegEven(MCD_TIMER_INT3));
+
+        //BYTE write to EVEN (MSB) address goes to LSB; MSB untouched
+        writeSubRegEvenByte(MCD_TIMER_INT3, 0xCC);
+        Assertions.assertEquals(0xCC, readSubRegOdd(MCD_TIMER_INT3));
+        Assertions.assertEquals(0, readSubRegEven(MCD_TIMER_INT3));
+
+        //BYTE write to ODD (LSB) address updates the LSB directly
+        writeSubRegOddByte(MCD_TIMER_INT3, 0xDD);
+        Assertions.assertEquals(0xDD, readSubRegOdd(MCD_TIMER_INT3));
+        Assertions.assertEquals(0, readSubRegEven(MCD_TIMER_INT3));
+    }
+
+    @Test
+    public void testIntMaskIsLsbOnly() {
+        //WORD write: MSB 0x11 ignored, LSB = 0x7E, MSB stays 0
+        writeSubRegWord(MCD_INT_MASK, 0x117E);
+        Assertions.assertEquals(0x7E, readSubRegOdd(MCD_INT_MASK));
+        Assertions.assertEquals(0, readSubRegEven(MCD_INT_MASK));
+
+        writeSubRegEvenByte(MCD_INT_MASK, 0x2A);
+        Assertions.assertEquals(0x2A, readSubRegOdd(MCD_INT_MASK));
+        Assertions.assertEquals(0, readSubRegEven(MCD_INT_MASK));
+
+
+    }
+
 }

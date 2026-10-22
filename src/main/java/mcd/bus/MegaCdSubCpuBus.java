@@ -291,8 +291,10 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                 writeReg(memCtx, M68K, regSpec, address, data, Size.BYTE);
             }
             case MCD_INT_MASK -> {
-                LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
-                boolean changed = writeBufferRaw(regs, address, data, size);
+                //byte writes to MSB go to LSB
+                int addr = size == Size.BYTE ? address | 1 : MCD_INT_MASK.addr + 1;
+                LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}({}), {}, {}", th(address), th(addr), th(data), size);
+                boolean changed = writeBufferRaw(regs, addr, data & 0xFF, Size.BYTE);
                 if (changed) {
                     int reg = Util.readBufferByte(commonGateRegs, MCD_INT_MASK.addr + 1);
                     McdSubInterruptHandler.printEnabledInterrupts(reg);
@@ -308,10 +310,9 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             }
             case MCD_TIMER_INT3 -> {
                 //byte writes to MSB go to LSB
-                int addr = size == Size.BYTE ? address | 1 : address;
                 timerContext.rate = data & 0xFF;
                 timerContext.counter = timerContext.rate;
-                writeReg(memCtx, cpuType, regSpec, addr, data, size);
+                writeReg(memCtx, cpuType, regSpec, MCD_TIMER_INT3.addr + 1, data & 0xFF, Size.BYTE);
             }
             case MCD_FONT_COLOR -> { //4c
                 //byte access always goes to the odd byte
