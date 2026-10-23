@@ -12,7 +12,6 @@ import omegadrive.system.SysUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -20,19 +19,21 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import static mcd.cd.CddTestHelper.*;
-import static mcd.cdd.Cdd.CddCommand.SeekPause;
-import static mcd.cdd.Cdd.CddCommand.SeekPlay;
+import static mcd.cdd.Cdd.CddCommand.*;
+import static mcd.cdd.Cdd.CddStatus.Paused;
+import static mcd.cdd.Cdd.CddStatus.Playing;
 import static mcd.cdd.Cdd.LBA_READAHEAD_LEN;
+import static mcd.cdd.Cdd.LEADOUTNUM;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2024
  *
- * TODO check vs CddImplNew
+ *
  */
-@Disabled
 public class CddTest extends McdRegTestBase {
     private static ExtendedCueSheet extendedCueSheet;
 
@@ -74,35 +75,30 @@ public class CddTest extends McdRegTestBase {
         lc.cdd.step(1);
     }
 
-    @Disabled
     @Test
     public void testDiscCompletionTime() {
         insertDiscEnableHock(lc, extendedCueSheet);
         //now in lead-in
         checkLeadIn();
 
-        clearCmdReg(lc);
-        cddRequest(lc, CddRequest.DiscCompletionTime);
+        request(CddRequest.DiscCompletionTime);
         lc.cdd.step(1);
-        Assertions.assertEquals("93.000862.5e", getStatusString());
+        assertEquals("03.000862.1b", getStatusString());
     }
 
     private void checkLeadIn() {
         //now in lead-in
-        clearCmdReg(lc);
-        cddRequest(lc, CddRequest.TrackInformation);
-        Assertions.assertEquals("92.000000.5f", getStatusString());
+        request(CddRequest.TrackInformation);
+        assertEquals("02.000000.1c", getStatusString());
 
-        clearCmdReg(lc);
-        cddRequest(lc, CddRequest.AbsoluteTime);
-        Assertions.assertEquals("90.995800.52", getStatusString());
+        request(CddRequest.AbsoluteTime);
+        assertEquals("00.995800.1f", getStatusString());
 
-        clearCmdReg(lc);
-        cddRequest(lc, CddRequest.RelativeTime);
-        Assertions.assertEquals("9f.995800.53", getStatusString());
+        request(CddRequest.RelativeTime);
+        assertEquals("0f.995800.10", getStatusString());
     }
 
-    @Disabled
+
     @Test
     public void testTrackStartTime() {
         insertDiscEnableHock(lc, extendedCueSheet);
@@ -115,7 +111,7 @@ public class CddTest extends McdRegTestBase {
         setCommandChecksum(lc);
         //
         lc.cdd.step(1);
-        Assertions.assertEquals("95.000280.16", getStatusString());
+        assertEquals("05.000280.1f", getStatusString());
     }
 
     /**
@@ -129,7 +125,6 @@ public class CddTest extends McdRegTestBase {
      * then counts down until it hits 0, which marks the beginning of the track, at which point it
      * begins counting up again. Needless to say, this was the source of a few fun off-by-one bugs.
      */
-    @Disabled
     @Test
     public void testRelativeTime() {
         Map<Integer, String> m = Map.of(
@@ -147,17 +142,14 @@ public class CddTest extends McdRegTestBase {
 
         for (var e : m.entrySet()) {
             CueFileParser.lbaToMsfAdjustPregap(e.getKey(), msfHolder);
-            System.out.println(msfHolder);
-            testSeekInternal(SeekPause, CddStatus.Paused);
-            clearCmdReg(lc);
-            cddRequest(lc, CddRequest.RelativeTime);
-            Assertions.assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
+            testSeekInternal(SeekPause, Paused);
+            request(CddRequest.RelativeTime);
+            assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
         }
     }
 
-    @Disabled
     @Test
-    public void testAbsoluteTime() {
+    public void testAbsoluteTimeSimple() {
         Map<Integer, String> m = Map.of(
                 LBA_LEADIN_POINT02, "40.995725.51",
                 LBA_LEADIN_END, "40.995974.5b",
@@ -173,11 +165,34 @@ public class CddTest extends McdRegTestBase {
 
         for (var e : m.entrySet()) {
             CueFileParser.lbaToMsfAdjustPregap(e.getKey(), CddTestHelper.msfHolder);
-            System.out.println(e.getKey() + "->" + msfHolder);
-            testSeekInternal(SeekPause, CddStatus.Paused);
-            clearCmdReg(lc);
-            cddRequest(lc, CddRequest.AbsoluteTime);
-            Assertions.assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
+            testSeekInternal(SeekPause, Paused);
+            request(CddRequest.AbsoluteTime);
+            assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
+        }
+    }
+
+    @Test
+    public void testAbsoluteTime() {
+        for (int target : new int[]{45, 345}) {
+            CueFileParser.lbaToMsfAdjustPregap(target, msfHolder);
+            testSeekInternal(SeekPlay, Playing);
+            CddContext ctx = ctx();
+
+            //landed LBA_READAHEAD_LEN sectors early
+            assertEquals(target - LBA_READAHEAD_LEN, ctx.io.sector);
+
+            for (int s = 0; s < LBA_READAHEAD_LEN; s++) {
+                lc.cdd.step(1);
+            }
+            assertEquals(target, ctx.io.sector);
+
+            request(CddRequest.AbsoluteTime);
+
+            CueFileParser.lbaToMsfAdjustPregap(target, msfHolder);
+            String exp = CddLogDecoder.toTestString(new int[]{0, 0,
+                    msfHolder.minute / 10, msfHolder.minute % 10, msfHolder.second / 10,
+                    msfHolder.second % 10, msfHolder.frame / 10, msfHolder.frame % 10, 0, 0});
+            assertEquals(exp.substring(3, 9), getStatusString().substring(3, 9));
         }
     }
 
@@ -207,30 +222,30 @@ public class CddTest extends McdRegTestBase {
      * RelativeTime 00m00s10f, lba: 10
      * Command: Request TrackInformation, ExecCmd
      */
-    @Disabled
+//    @Disabled
     @Test
     public void testRelativeTime2() {
-        int[] expStat = {4, -1, 0, 0, 0, 0, 0, -1, 5, -1};
-        for (int i = 35; i < 46; i++) {
-            System.out.println(i);
-            System.out.println(getStatusString());
-            CueFileParser.lbaToMsfAdjustPregap(i, CddTestHelper.msfHolder);
-            testSeekInternal(SeekPause, CddStatus.Paused);
-            clearCmdReg(lc);
-            cddRequest(lc, CddRequest.RelativeTime);
-            expStat[1] = CddRequest.RelativeTime.ordinal();
-            //when seeking the actual lba is decreased by 3
-            //150-(i-3) frames away from the actual track start (2s of pregap)
-            //TODO can sw see other sectors while seek pause "gets" there??
-            int relativeLba = (i - LBA_READAHEAD_LEN);
-            String exp = setMsfGetTestString(relativeLba + LBA_READAHEAD_LEN, expStat);
-            Assertions.assertEquals(exp, getStatusString());
+        //indexed by i-35, i in [35.46); SeekPause lands exactly on the requested sector
+        String[] expRel = {
+                "41.000035.5d", "41.000036.5c", "41.000037.5b", "41.000038.5a", "41.000039.59",
+                "41.000040.51", "41.000041.50", "41.000042.5f", "41.000043.5e", "41.000044.5d",
+                "41.000045.5c"
+        };
+        String[] expAbs = {
+                "40.000235.5c", "40.000236.5b", "40.000237.5a", "40.000238.59", "40.000239.58",
+                "40.000240.50", "40.000241.5f", "40.000242.5e", "40.000243.5d", "40.000244.5c",
+                "40.000245.5b"
+        };
+        int sectStart = 35, sectEnd = 46;
 
-            cddRequest(lc, CddRequest.AbsoluteTime);
-            expStat[1] = CddRequest.AbsoluteTime.ordinal();
-            int absoluteLba = i - LBA_READAHEAD_LEN + CueFileParser.PREGAP_LEN_LBA;
-            exp = setMsfGetTestString(absoluteLba + LBA_READAHEAD_LEN, expStat);
-            Assertions.assertEquals(exp, getStatusString());
+        for (int i = sectStart; i < sectEnd; i++) {
+            CueFileParser.lbaToMsfAdjustPregap(i, CddTestHelper.msfHolder);
+            testSeekInternal(SeekPause, Paused);
+            request(CddRequest.RelativeTime);
+            assertEquals(expRel[i - sectStart], getStatusString());
+
+            request(CddRequest.AbsoluteTime);
+            assertEquals(expAbs[i - sectStart], getStatusString());
         }
     }
 
@@ -254,11 +269,9 @@ public class CddTest extends McdRegTestBase {
 
         for (var e : m.entrySet()) {
             CueFileParser.lbaToMsfAdjustPregap(e.getKey(), CddTestHelper.msfHolder);
-            System.out.println(e.getKey() + "->" + msfHolder);
-            testSeekInternal(SeekPause, CddStatus.Paused);
-            clearCmdReg(lc);
-            cddRequest(lc, CddRequest.TrackInformation);
-            Assertions.assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
+            testSeekInternal(SeekPause, Paused);
+            request(CddRequest.TrackInformation);
+            assertEquals(e.getValue(), getStatusString(), "LBA: " + e.getKey());
         }
     }
 
@@ -267,7 +280,6 @@ public class CddTest extends McdRegTestBase {
         int[] lbas = {LBA_START_PROGRAM, -5, -1, LBA_START_TRACK1_INDEX01, 45};
         for (var lba : lbas) {
             CueFileParser.lbaToMsfAdjustPregap(lba, CddTestHelper.msfHolder);
-            System.out.println(lba + "->" + msfHolder);
             testSeekInternal(SeekPlay, CddStatus.Playing);
             clearCmdReg(lc);
         }
@@ -278,36 +290,182 @@ public class CddTest extends McdRegTestBase {
         int[] lbas = {LBA_START_PROGRAM, -5, -1, LBA_START_TRACK1_INDEX01, 45};
         for (var lba : lbas) {
             CueFileParser.lbaToMsfAdjustPregap(lba, CddTestHelper.msfHolder);
-            System.out.println(lba + "->" + msfHolder);
-            testSeekInternal(SeekPause, CddStatus.Paused);
+            testSeekInternal(SeekPause, Paused);
             clearCmdReg(lc);
         }
     }
 
-    private void testSeekInternal(CddCommand command, CddStatus expected) {
-        insertDiscEnableHock(lc, extendedCueSheet);
-        cddRequest(lc, command);
-        waitCddStatus(lc, expected);
-    }
+    @Test
+    public void testSeekPlayAdvancesToTarget() {
+        int target = 45;
+        CueFileParser.lbaToMsfAdjustPregap(target, msfHolder);
+        testSeekInternal(SeekPlay, CddStatus.Playing);
+        CddContext ctx = lc.cdd.getCddContext();
 
-    private String getStatusString() {
-        CddContext context = lc.cdd.getCddContext();
-        return CddLogDecoder.toTestString(context.statusRegs);
+        assertEquals(target - LBA_READAHEAD_LEN, ctx.io.sector);
+
+        for (int s = 0; s < LBA_READAHEAD_LEN; s++) {
+            lc.cdd.step(1);
+        }
+
+        assertEquals(target, ctx.io.sector);
+        assertEquals(CddStatus.Playing, ctx.io.status);
+
+        lc.cdd.step(1);
+
+        //keeps advancing while playing
+        assertEquals(target + 1, ctx.io.sector);
     }
 
     @Test
+    public void testSeekPauseFreezesPosition() {
+        int target = 45;
+        CueFileParser.lbaToMsfAdjustPregap(target, msfHolder);
+        testSeekInternal(SeekPause, Paused);
+        CddContext ctx = lc.cdd.getCddContext();
 
+        assertEquals(target, ctx.io.sector);
+
+        for (int s = 0; s < 8; s++) {
+            lc.cdd.step(1);
+            assertEquals(target, ctx.io.sector);
+            assertEquals(Paused, ctx.io.status);
+        }
+    }
+
+    @Test
+    public void testBiosSeekPauseSettlesOnTarget() {
+        int target = 45;
+        //BIOS: issue SeekPause, poll until settles
+        CddContext ctx = insertAndPauseAt(target);
+
+        request(CddRequest.AbsoluteTime);
+        assertEquals("40.000245.5b", getStatusString());
+        assertEquals(target, ctx.io.sector);
+    }
+
+    @Test
+    public void testBiosSeekPlayReadsFromTarget() {
+        int target = 45;
+        CddContext ctx = insertAndPlayTo(target);
+        assertEquals(target, ctx.io.sector);
+        assertEquals(CddStatus.Playing, ctx.io.status);
+    }
+
+    @Test
+    public void testBiosPauseResumeWhilePlaying() {
+        int target = 45;
+        CddContext ctx = insertAndPlayTo(target);
+
+        //BIOS pause: freeze at the current sector
+        command(Pause);
+        waitCddStatus(lc, Paused);
+
+        int frozen = ctx.io.sector;
+        for (int i = 0; i < 5; i++) {
+            lc.cdd.step(1);
+            assertEquals(frozen, ctx.io.sector);
+        }
+
+        //BIOS resume (Play): drive advances, from the frozen sector
+        command(Play);
+        waitCddStatus(lc, CddStatus.Playing); //this already steps
+        int afterResume = ctx.io.sector;
+        Assertions.assertTrue(afterResume > frozen);
+        lc.cdd.step(1);
+        assertEquals(afterResume + 1, ctx.io.sector);
+    }
+
+
+    @Test
+    public void testBiosStop() {
+        int target = 45;
+        //start playing and reach the target
+        CddContext ctx = insertAndPlayTo(target);
+        command(Stop);
+        //RS0 reports Stopped immediately
+        assertEquals(CddStatus.Stopped.ordinal(), ctx.statusRegs[0]);
+        //internal drive state is ReadingTOC, drive no longer advances
+        assertEquals(CddStatus.ReadingTOC, ctx.io.status);
+        int frozen = ctx.io.sector;
+        for (int i = 0; i < 5; i++) {
+            lc.cdd.step(1);
+            assertEquals(frozen, ctx.io.sector);
+        }
+    }
+
+    @Test
+    public void testBiosForwardReverseScan() {
+        int target = 200;
+        //start playing and reach the target
+        CddContext ctx = insertAndPlayTo(target);
+        //Forward scan: position jumps forward by CD_SCAN_SPEED per step
+        command(Forward);
+        waitCddStatus(lc, CddStatus.Scanning);
+        int before = ctx.io.sector;
+        lc.cdd.step(1);
+        assertEquals(before + Cdd.CD_SCAN_SPEED, ctx.io.sector);
+
+        //Reverse scan
+        command(Reverse);
+        waitCddStatus(lc, CddStatus.Scanning);
+        before = ctx.io.sector;
+        lc.cdd.step(1);
+        assertEquals(before - Cdd.CD_SCAN_SPEED, ctx.io.sector);
+    }
+
+    /**
+     * TrackSkip moves the laser and reports Paused; it does not change the reported position.
+     */
+    @Test
+    public void testBiosTrackSkip() {
+        int target = 45;
+        CddContext ctx = insertAndPauseAt(target);
+        int before = ctx.io.sector;
+
+        command(TrackSkip);
+        assertEquals(Paused, ctx.io.status);
+        assertEquals(before, ctx.io.sector);
+    }
+
+    @Test
+    public void testBiosDoorOpenClose() {
+        insertDiscEnableHock(lc, extendedCueSheet);
+        CddContext ctx = lc.cdd.getCddContext();
+
+        command(DoorOpen);
+        assertEquals(CddStatus.DoorOpened.ordinal(), ctx.statusRegs[0]);
+        assertEquals(CddStatus.DoorOpened, ctx.io.status);
+
+        command(DoorClose);
+        assertEquals(CddStatus.Stopped.ordinal(), ctx.statusRegs[0]);
+        assertEquals(CddStatus.ReadingTOC, ctx.io.status);
+    }
+
+    @Test
+    public void testBiosDriveStatus() {
+        int target = 45;
+        CddContext ctx = insertAndPauseAt(target);
+        int before = ctx.io.sector;
+
+        command(DriveStatus);
+        lc.cdd.step(1);
+        assertEquals(Paused.ordinal(), ctx.statusRegs[0]);
+        assertEquals(before, ctx.io.sector);
+    }
+
+    @Test
     public void testFader() {
         CddContext ctx = lc.cdd.getCddContext();
-        Assertions.assertEquals(Cdd.FADER_MAX, ctx.faderVol);
-        Assertions.assertEquals(Cdd.FADER_MAX, ctx.faderTarget);
+        assertEquals(Cdd.FADER_MAX, ctx.faderVol);
+        assertEquals(Cdd.FADER_MAX, ctx.faderTarget);
 
         lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0x4000, Size.WORD); // >> 4 = 0x400 full
-        Assertions.assertEquals(0x400, ctx.faderTarget);
+        assertEquals(0x400, ctx.faderTarget);
         lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0, Size.WORD); // fade to mute
-        Assertions.assertEquals(0, ctx.faderTarget);
+        assertEquals(0, ctx.faderTarget);
         lc.cdd.write(MCD_CD_FADER, MCD_CD_FADER.addr, 0x2000, Size.WORD); // fade to mute
-        Assertions.assertEquals(0x200, ctx.faderTarget);
+        assertEquals(0x200, ctx.faderTarget);
 
         //per-sample fade stepping
         ctx.faderVol = 0x200;
@@ -317,21 +475,43 @@ public class CddTest extends McdRegTestBase {
             lc.cdd.stepCdda();
         }
 
-        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+        assertEquals(ctx.faderTarget, ctx.faderVol);
         ctx.faderTarget = 0x200;
         for (int i = 0; i < 4; i++) {
             lc.cdd.stepCdda();
         }
-        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+        assertEquals(ctx.faderTarget, ctx.faderVol);
 
         //at target, no further movement
         lc.cdd.stepCdda();
-        Assertions.assertEquals(ctx.faderTarget, ctx.faderVol);
+        assertEquals(ctx.faderTarget, ctx.faderVol);
 
     }
 
+    @Test
+    public void testRelativeTimeLeadOut() {
+        insertDiscEnableHock(lc, extendedCueSheet);
+        CddContext ctx = lc.cdd.getCddContext();
+
+        //place the drive in the lead-out, after the lead-out start
+        int offset = 100;
+        ctx.io.track = LEADOUTNUM;
+        ctx.io.sector = extendedCueSheet.sectorEnd + offset;
+
+        clearCmdReg(lc);
+        cddRequest(lc, CddRequest.RelativeTime);
+
+        //relative time must count up from the lead-out start (end of last track)
+        int relLba = relativeLbaFromStatus(ctx);
+        assertEquals(offset, relLba);
+        Assertions.assertNotEquals(extendedCueSheet.sectorEnd + offset, relLba);
+    }
+
+
+
     /**
-     * TODO
+     * TODO not implemented
+     *
      * when a pause command is received by CDD from SUB-CPU while the disc is being read (cdd status = 0x1),
      * cdd status changes imediately to paused status (0x4) but the reported position (in other cdd status nibbles)
      * continues to increase for two sectors before it seeks back to a few sectors before the paused position ,
@@ -347,11 +527,85 @@ public class CddTest extends McdRegTestBase {
      * 4F.000000.57 - 00.000000.0F
      */
     @Test
-    public void test01() {
-//        insertDiscEnableHock();
-//        cddRequest(CddRequest.DiscTracks, 0);
-//        setCommandChecksum();
-//        waitCddStatus(expected);
+    public void testPauseWhileReadingFreezesImmediately() {
+        int target = 203;
+        CddContext ctx = insertAndPlayTo(target);
+
+        //Pause while reading: status -> Paused(0x4) immediately, position frozen at the current
+        //sector (no hw 2-sector overshoot implemented)
+        command(Pause);
+        assertEquals(Paused.ordinal(), ctx.statusRegs[0]);
+        assertEquals(Paused, ctx.io.status);
+        assertEquals(target, ctx.io.sector);
+
+        for (int i = 0; i < 4; i++) {
+            lc.cdd.step(1);
+            assertEquals(target, ctx.io.sector);
+            assertEquals(Paused, ctx.io.status);
+        }
+
+    }
+
+    /**
+     * HELPERS
+     */
+
+    private void testSeekInternal(CddCommand command, CddStatus expected) {
+        insertDiscEnableHock(lc, extendedCueSheet);
+        cddRequest(lc, command);
+        waitCddStatus(lc, expected);
+    }
+
+    private String getStatusString() {
+        CddContext context = lc.cdd.getCddContext();
+        return CddLogDecoder.toTestString(context.statusRegs);
+    }
+
+    private int relativeLbaFromStatus(CddContext ctx) {
+        int[] s = ctx.statusRegs;
+        return CueFileParser.msfToSector(s[2] * 10 + s[3], s[4] * 10 + s[5], s[6] * 10 + s[7]);
+    }
+
+    private CddContext ctx() {
+        return lc.cdd.getCddContext();
+    }
+
+    private void seekTo(CddCommand c, int targetLba) {
+        CueFileParser.lbaToMsfAdjustPregap(targetLba, msfHolder);
+        cddRequest(lc, c);
+    }
+
+    private CddContext insertAndPlayTo(int targetLba) {
+        insertDiscEnableHock(lc, extendedCueSheet);
+        seekTo(SeekPlay, targetLba);
+        waitCddStatus(lc, CddStatus.Playing);
+        playForwardTo(targetLba);
+        return ctx();
+    }
+
+    private CddContext insertAndPauseAt(int targetLba) {
+        insertDiscEnableHock(lc, extendedCueSheet);
+        seekTo(SeekPause, targetLba);
+        waitCddStatus(lc, Paused);
+        return ctx();
+    }
+
+    private void playForwardTo(int targetLba) {
+        int guard = 0;
+        while (ctx().io.sector < targetLba && guard++ < 1000) {
+            lc.cdd.step(1);
+        }
+        assertEquals(targetLba, ctx().io.sector);
+    }
+
+    private void command(CddCommand command) {
+        clearCmdReg(lc);
+        cddRequest(lc, command);
+    }
+
+    private void request(CddRequest request) {
+        clearCmdReg(lc);
+        cddRequest(lc, request);
     }
 
 }

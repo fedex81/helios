@@ -205,14 +205,6 @@ public class CddImplNew implements Cdd {
     }
 
     int cnt = 0;
-    int pauseLbaTarget = -1;
-
-    public void setPauseLbaTarget(int plt) {
-        if (plt != pauseLbaTarget) {
-            if (verbose) LOG.info("pauseLbaTarget: {} -> {}", pauseLbaTarget, plt);
-            pauseLbaTarget = plt;
-        }
-    }
 
     public void step(int cycles) {
 //        clearStatusRegs();
@@ -259,9 +251,6 @@ public class CddImplNew implements Cdd {
                 updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
                 CueFileParser.lbaToMsfAdjustPregap(cddContext.io.sector, msfHolder);
                 updateStatusesMsf(AbsoluteTime.ordinal(), getFlags(), msfHolder);
-                if (cddContext.io.status == Paused) {
-                    setPauseLbaTarget(cddContext.io.sector + LBA_READAHEAD_LEN);
-                }
             }
             return;
         }
@@ -361,7 +350,6 @@ public class CddImplNew implements Cdd {
                 /* update status (RS1-RS8 unchanged) */
                 setIoStatus(Paused);
                 updateStatus(0, Paused.ordinal());
-                setPauseLbaTarget(cddContext.io.sector - LBA_READAHEAD_LEN);
             }
             /* Resume */
             case Play -> {
@@ -451,7 +439,7 @@ public class CddImplNew implements Cdd {
                 cddContext.commandRegs[7]);
         CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
         extraInfo.append("lba " + lba + ", msf " + msfHolder);
-        if (cddContext.io.status != Playing) {
+        if (seek == CddCommand.SeekPlay && cddContext.io.status != Playing) {
             lba -= LBA_READAHEAD_LEN;
         }
 
@@ -551,26 +539,8 @@ public class CddImplNew implements Cdd {
                     updateStatus(2, cddContext.io.track / 10);
                     updateStatus(3, cddContext.io.track % 10);
                 }
-                case TrackStartTime -> {
-//                    int track = cddContext.commandRegs[4] * 10 + cddContext.commandRegs[5];
-//                    CdModel.ExtendedTrackData extTrackData = ExtendedCueSheet.getExtTrack(extCueSheet, track);
-//                    if (extTrackData == CdModel.ExtendedTrackData.NO_TRACK) {
-//                        updateStatus(1, NotReady.ordinal());
-//                        updateStatus(8, getFlags());
-//                        break;
-//                    }
-//                    CueFileParser.MsfHolder msf = extTrackData.trackStartMsf;
-//                    /* RS6 bit 3 is set for CD-ROM track, Track Number (low digit) */
-//                    final boolean isAudio = cddContext.io.track > 0 ?
-//                            ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track) : true;
-//                    int status6 = (isAudio ? 0 : 0x8) | (msf.frame / 10);
-//                    updateStatuses(request.ordinal(), msf.minute / 10, msf.minute % 10,
-//                            msf.second / 10, msf.second % 10, status6, msf.frame % 10, track % 10);
-//                    updateStatus(8, getFlags());
-                    assert false;
-                }
                 default -> {
-                    assert false : request;
+                    LOG.warn("Unsupported DriveStatus request: {}", request);
                 }
             }
         }
@@ -601,13 +571,13 @@ public class CddImplNew implements Cdd {
                     updateStatus(1, NotReady.ordinal());
                     break;
                 }
-                //TODO test: relative time in LEAD_OUT, track number becomes 0xAA and relative time keeps
-                // increasing from the last track. Thunder Storm FX (Japan)
-                int trackNumRef = cddContext.io.track == LEADOUTNUM ? extCueSheet.numTracks : cddContext.io.track;
-                CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, trackNumRef);
+                //relative time in LEAD_OUT, track number becomes 0xAA and relative time keeps
+                //increasing from the last track. Thunder Storm FX (Japan)
+                int refSector = cddContext.io.track == LEADOUTNUM ? extCueSheet.sectorEnd :
+                        ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).absoluteSectorStart;
 
                 /* current track relative time */
-                int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                int lba = Math.abs(cddContext.io.sector - refSector);
                 CueFileParser.lbaToMsf(lba, msfHolder);
                 updateStatusesMsf(request.ordinal(), getFlags(), msfHolder);
             }
