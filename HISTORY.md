@@ -1,3 +1,16 @@
+## 26.1023
+
+32x: savestate fix
+32x: improve mid-palette change detection
+32x: SH2 DMA fixes
+helios: add optional blending filter
+helios: more accurate sleeping for Windows
+helios: refactor audio code
+mcd: mani fixes [...]
+mcd: store/load bram contents to/from file
+ui: show audio delay in frames
+ui: status bar
+
 ## 26.0408
 
 32x: support palette changes during hblank in packedPx mode
