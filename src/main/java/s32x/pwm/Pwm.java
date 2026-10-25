@@ -389,6 +389,14 @@ public class Pwm implements StepDevice {
 
     private void dreq() {
         if (ctx.dreqEn) {
+            //TODO DREQ1 PWM, external DMA, cycle steal
+            //TODO when the fifo is NOT full and NOT empty -> DREQ1 goes high
+            //TODO DMAC pulls *ONE* element from the fifo, transfers it and stops
+            //TODO if the fifo is Empty -> DREQ1 lowers
+            //TODO if the fifo is Full  -> DREQ1 lowers
+//            boolean fifoFull = fifoMapLeft.fifo.isFull() || fifoMapRight.fifo.isFull();
+//            boolean fifoEmpty = fifoMapLeft.fifo.isEmpty() && fifoMapRight.fifo.isEmpty();
+//            boolean enable = !fifoFull && !fifoEmpty;
             //NOTE this should trigger on channel one for BOTH sh2s
             dmac[MASTER.ordinal()].dmaReqTrigger(PWM_DMA_CHANNEL, true, true);
             dmac[SLAVE.ordinal()].dmaReqTrigger(PWM_DMA_CHANNEL, true, true);

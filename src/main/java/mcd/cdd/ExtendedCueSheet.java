@@ -79,7 +79,7 @@ public class ExtendedCueSheet implements Closeable {
         //first check if we have a matching *.cue file
         Path mcp = Paths.get(path.toAbsolutePath().toString().replace(ISO_EXT, CUE_EXT));
         Path cp = path.resolveSibling(mcp);
-        if (Files.exists(cp)) {
+        if (Files.exists(cp) && cp.toString().toLowerCase().endsWith(CUE_EXT)) {
             isoPathCue = Optional.of(cp);
             cs = CueFileParser.parse(isoPathCue.get());
             ref.set(isoPathCue.get());

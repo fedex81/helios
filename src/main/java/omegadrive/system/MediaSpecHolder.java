@@ -140,9 +140,10 @@ public class MediaSpecHolder {
         MediaSpecHolder r = new MediaSpecHolder();
         r.systemType = systemType;
         RomFileType rft = RomFileType.CART_ROM;
-        rft = file.toString().endsWith(CUE_EXT) ? RomFileType.BIN_CUE : rft;
-        rft = file.toString().endsWith(ISO_EXT) ? RomFileType.ISO : rft;
-        if (file.toString().endsWith(ISO_GZ_EXT)) {
+        String lc = file.toString().toLowerCase();
+        rft = lc.endsWith(CUE_EXT) ? RomFileType.BIN_CUE : rft;
+        rft = lc.endsWith(ISO_EXT) ? RomFileType.ISO : rft;
+        if (lc.endsWith(ISO_GZ_EXT)) {
             rft = RomFileType.ISO;
             assert ZipUtil.isGZipByteStream(file) : file;
         }
