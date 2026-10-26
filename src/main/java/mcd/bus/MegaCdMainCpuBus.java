@@ -61,7 +61,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     private final ByteBuffer prgRam, sysGateRegs, commonGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
-    private boolean enableMCDBus = true, enableMode1 = false, isBios;
+    private boolean enableMCDBus = true, enableMode1 = false;
 
     public ByteBuffer bios;
     private final LogHelper logHelper = new LogHelper();
@@ -177,8 +177,13 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                     VRAM cell image mapped at $220_000-$23F_FFF
                 */
                 memCtx.wramHelper.writeWordRam(cpu, addr & MCD_WORD_RAM_2M_MASK, data, size);
-                //TODO mmh check
-//                memCtx.wramHelper.writeWordRamMainCell(addr & MCD_WORD_RAM_2M_MASK, data, size);
+                if (memCtx.wramSetup.mode == WordRamMode._1M && addr >= cellWinStart && addr <= cellWinEnd) {
+                    memCtx.wramHelper.writeWordRamMainCell(addr, data, size);
+                    LogHelper.logWarnOnce(LOG, "{} cell window write", memCtx.wramSetup);
+                } else {
+                    memCtx.wramHelper.writeWordRam(cpu, addr, data, size);
+                }
+
                 return;
             }
         }

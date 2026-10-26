@@ -17,7 +17,6 @@ import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
-import static mcd.util.McdWramCell.linearCellMap;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -412,68 +411,6 @@ public class McdWordRamHelper {
         }
     }
 
-//    public void writeCellMapped(int addr, int data, Size size) {
-//        assert memoryContext.wramSetup.mode == _1M;
-//        switch (size) {
-//            case BYTE -> {
-//                int val = readCellMapped(addr, Size.WORD);
-//                ArrayEndianUtil.setByteInWordBE(val, data, addr & 1);
-//                writeCell(addr & ~1, val);
-//            }
-//            case WORD -> writeCell(addr, data);
-//            case LONG -> {
-//                writeCell(addr, data >> 16);
-//                writeCell(addr + 2, data);
-//            }
-//        }
-//    }
-
-    public static int cellImageTranslateWordIndex(int cellOffset) {
-        int wordOfCell = cellOffset & 2;
-        int res;
-        if (cellOffset < 0x10_000) {
-            //64x32 cell view
-            int lineOfColumn = cellOffset & 0x3FC;
-            int column = cellOffset & 0xFC00;
-            res = (lineOfColumn << 6) | (column << 8) | wordOfCell;
-        } else if (cellOffset < 0x18_000) {
-            //64x16 cell view
-            int lineOfColumn = cellOffset & 0x1FC;
-            int column = cellOffset & 0x7e00;
-            res = 0x10_000 | (lineOfColumn << 6) | (column << 7) | wordOfCell;
-        } else if (cellOffset < 0x1C_000) {
-            //64x8 cell view
-            int lineOfColumn = cellOffset & 0xFC;
-            int column = cellOffset & 0x3f00;
-            res = 0x18_000 | (lineOfColumn << 6) | (column << 6) | wordOfCell;
-        } else {
-            //64x4 cell view
-            int lineOfColumn = cellOffset & 0x7C;
-            int column = cellOffset & 0x1f80;
-            res = (cellOffset & 0x1e000) | (lineOfColumn << 6) | (column << 6) | wordOfCell;
-        }
-        return res;
-    }
-
-    private int readWordRamByWordIndexInterleaved(int wordIndex) {
-        int bank = wordIndex & 1;
-        int byteOffset = (wordIndex >> 1) << 1;
-        return Util.readDataWord(wordRam01[bank], byteOffset & MCD_WORD_RAM_1M_MASK);
-    }
-
-    public int readWordCellImage(CpuDeviceAccess cpu, int cellOffset, Size size) {
-        assert memoryContext.wramSetup.mode == _1M;
-        int base = cellImageTranslateWordIndex(cellOffset & MCD_WORD_RAM_1M_MASK);
-        return switch (size) {
-            case WORD -> readWordRamByWordIndexInterleaved(base);
-            case LONG -> readWordRamByWordIndexInterleaved(base << 16) |
-                    readWordCellImage(cpu, cellOffset + 2, Size.WORD);
-            case BYTE -> {
-                int word = readWordRamByWordIndexInterleaved(base);
-                yield (word >> ((~cellOffset & 1) << 3)) & 0xFF;
-            }
-        };
-    }
 
     public int readWordRamMainCell(int address, Size size) {
         if (memoryContext.wramSetup.mode != _1M) {
@@ -507,12 +444,6 @@ public class McdWordRamHelper {
                 Util.writeDataByte(wordRam01[bank], lin & MCD_WORD_RAM_1M_MASK, value);
             }
         }
-    }
-
-    private void writeCell(int a, int value) {
-        int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
-        int otherBank = ~assignedBank & 1;
-        writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
     }
 
     private int readWordRamCellWord(int address) {
