@@ -29,7 +29,7 @@ jobs:
 
       # 2. Upgraded to v4 for Node.js/runner compatibility
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: 21
@@ -37,7 +37,7 @@ jobs:
 
       # 3. Upgraded to v3 and added build-mode: none
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
