@@ -29,9 +29,9 @@ dependencies {
     implementation group: 'org.jaudiolibs', name: 'audioservers-javasound', version: '2.0.0'
     implementation 'com.google.code.gson:gson:2.15.0'
     implementation 'com.formdev:flatlaf:3.7.2'
-    implementation group: 'org.ow2.asm', name: 'asm', version: '9.10.1'
-    implementation group: 'org.ow2.asm', name: 'asm-commons', version: '9.10.1'
-    implementation group: 'org.ow2.asm', name: 'asm-util', version: '9.10.1'
+    implementation group: 'org.ow2.asm', name: 'asm', version: '9.11.1'
+    implementation group: 'org.ow2.asm', name: 'asm-commons', version: '9.11.1'
+    implementation group: 'org.ow2.asm', name: 'asm-util', version: '9.11.1'
 
     implementation 'org.tinylog:tinylog-api:2.8.1'
     implementation 'org.tinylog:tinylog-impl:2.8.1'
