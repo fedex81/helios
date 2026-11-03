@@ -40,6 +40,10 @@ Lawnmower man EU
 Flashback DEMO EU
 - Odd PCM DMA length: 2047, addr: 0 (ONCE)
 
+check wram cell writing
+19: Double Switch (USA).cue
+25: Bram Stoker's Dracula (USA) (Version 2.0).cue
+
 not working
 Aisle Lord JP - freeze after BIOS
 Arslan Senki JP - 1st screen after BIOS

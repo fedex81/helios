@@ -234,13 +234,15 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             if (!DmaFifo68k.rv) {
                 res = mdBus.read(address & S32xDict.M68K_ROM_WINDOW_MASK, size);
             } else {
-                LOG.warn("Ignoring read access to ROM mirror when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
+                LogHelper.logWarnOnce(LOG, "Ignoring read access to ROM mirror when RV={}, addr: {}_XXXX {}",
+                        DmaFifo68k.rv, th(address >> 16), size);
             }
         } else if (address >= S32xDict.M68K_START_ROM_MIRROR_BANK && address < S32xDict.M68K_END_ROM_MIRROR_BANK) {
             if (!DmaFifo68k.rv) {
                 res = mdBus.read(bankSetShift | (address & S32xDict.M68K_ROM_MIRROR_MASK), size);
             } else {
-                LOG.warn("Ignoring read access to ROM mirror bank when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
+                LogHelper.logWarnOnce(LOG, "Ignoring read access to ROM mirror bank when RV={}, addr: {}_XXXX {}",
+                        DmaFifo68k.rv, th(address >> 16), size);
             }
         } else if (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_FRAME_BUFFER) {
             res = read32xWord((address & S32xDict.DRAM_MASK) | S32xDict.START_DRAM, size);

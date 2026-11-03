@@ -88,12 +88,15 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
      * 0xA1_5100 ... 0xA1_5400 regs
      */
     private static boolean is32xAddress(int address, boolean cartBoot) {
-        if (cartBoot) {    //TODO doom fusion
+        if (cartBoot) {
             if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) return true;
+            if (address >= S32xDict.M68K_START_ROM_MIRROR_BANK && address < S32xDict.M68K_END_ROM_MIRROR_BANK)
+                return true;
             if ((address < S32xDict.M68K_END_VECTOR_ROM)) return true;
         } else {
             //rom mirror should not work as there is no cart
             assert !(address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) : th(address);
+            assert !(address >= S32xDict.M68K_START_ROM_MIRROR_BANK && address < S32xDict.M68K_END_ROM_MIRROR_BANK) : th(address);
         }
         return
                 (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_OVERWRITE_IMAGE) ||

@@ -12,6 +12,8 @@ public interface PwmProvider extends SoundDevice, SoundDevice.MutableDevice {
     int NTSC_SH2CLOCK_MHZ = (int) (Util.GEN_NTSC_MCLOCK_MHZ * 3.0 / 7);
     int PAL_SH2CLOCK_MHZ = (int) (Util.GEN_PAL_MCLOCK_MHZ * 3.0 / 7);
 
+    int PWM_VOLUME_SHIFT = 1; //Vr32x
+
     void updatePwmCycle(int cycle);
 
     void playSample(int left, int right);

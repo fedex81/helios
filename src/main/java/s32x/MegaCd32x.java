@@ -27,8 +27,6 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
  * Copyright 2025
  *
  * MCD_32X software, cart slot is empty.
- * - Night Trap (USA) (Disc 1) (Sega CD 32X) (RE-1), works with choppy audio (SegaCD emulation issue)
- * - Supreme Warrior EU -> ok, USA -> Choppy audio
  */
 public class MegaCd32x extends Md32x {
 

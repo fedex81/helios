@@ -247,8 +247,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             return mapper.readData(address, size);
         } else {
-            logWarnOnce(LOG, "Unexpected bus read: {}, 68k PC: {}",
-                    th(address), th(m68kProvider.getPC()));
+            logWarnOnce(LOG, "Unexpected bus read: {}_XXXX, 68k PC: {}",
+                    th(address >> 16), th(m68kProvider.getPC()));
             return size.getMask();
         }
     }
@@ -297,7 +297,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     private void reservedWrite(int addressL, int data, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
-            logWarnOnce(LOG, "Unexpected bus write: {}, 68k PC: {}", th(addressL),
+            logWarnOnce(LOG, "Unexpected bus write: {}_XXXX, 68k PC: {}", th(addressL >> 16),
                     th(m68kProvider.getPC()));
         } else {
             msuMdHandler.handleMsuMdWrite(addressL, data, size);
@@ -306,7 +306,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     private int reservedRead(int address, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
-            logWarnOnce(LOG, "Read on reserved address: {}, {}", th(address), size);
+            logWarnOnce(LOG, "Read on reserved address: {}_XXXX, {}", th(address >> 16), size);
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror

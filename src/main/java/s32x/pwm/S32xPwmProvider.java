@@ -29,8 +29,6 @@ import static s32x.pwm.PwmUtil.PwmStats.NO_STATS;
  * - Bad Apple 32x, cycle 719*60 -> 43khz
  * - Space Harrier, cycle 1474*60 -> 88khz
  * - OutRom.bin, pwm only
- *
- * TODO: check?? other problematic stuff: Mars Test #2 (should be mute?)
  */
 public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider {
 
@@ -59,7 +57,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     public void updatePwmCycle(int cycle) {
         float c = cycle;
         int pwmSamplesPerFrame = (int) (sh2ClockMhz / (fps * cycle));
-        scale = (Short.MAX_VALUE << 1) / c;
+        scale = (Short.MAX_VALUE << 1) / Math.max(c, 1);
         shouldPlay = cycle >= CYCLE_LIMIT;
         this.cycle = cycle;
         start();
@@ -77,7 +75,6 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
         }
     }
 
-    //NOTE source is running ~22khz
     @Override
     public void playSample(int left, int right) {
         if (!shouldPlay) {
@@ -96,7 +93,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
             sleft = clampToShort(vleft);
             sright = clampToShort(vright);
         }
-        addStereoSample(sleft, sright);
+        addStereoSample(sleft >> PWM_VOLUME_SHIFT, sright >> PWM_VOLUME_SHIFT);
     }
 
     /**
