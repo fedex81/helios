@@ -23,6 +23,9 @@ import java.util.Arrays;
 import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
+import static s32x.dict.S32xDict.DRAM_MASK;
+import static s32x.dict.S32xDict.SH2_CACHE_THROUGH_OFFSET;
+import static s32x.dict.S32xMemAccessDelay.FRAME_BUFFER;
 import static s32x.sh2.Sh2Helper.*;
 import static s32x.sh2.Sh2Helper.Sh2PcInfoWrapper.HASH_CODE_MASK;
 
@@ -235,6 +238,16 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                 block.fetchBuffer = bios[cpu.ordinal()].buffer;
                 block.pcMasked = pc;
                 block.fetchMemAccessDelay = S32xMemAccessDelay.BOOT_ROM;
+                break;
+            case 4:
+            case 0x24:
+                block.pcMasked = pc & DRAM_MASK;
+                block.fetchMemAccessDelay = FRAME_BUFFER;
+                LogHelper.logWarnOnce(LOG, "{} SH2 executing code from the framebuffer area, cached: {}", cpu,
+                        (pc & SH2_CACHE_THROUGH_OFFSET) == 0);
+                //NOTE: only supports cached reads
+                block.fetchBuffer = null;
+                assert (pc & SH2_CACHE_THROUGH_OFFSET) == 0;
                 break;
             default:
                 if ((pc >>> 28) == 0xC) {
