@@ -66,12 +66,7 @@ public class CdFormatChecker {
         try {
             track.data.seek(dataSeekPos - 16);
             int readN = track.data.read(syncHeader, 0, syncHeader.length);
-            try {
-                assert readN == syncHeader.length : track + ",seekPos:" + th(dataSeekPos); //SurgicalStrike_E
-            } catch (Error e) {
-                //try-catch for debugging
-                e.printStackTrace();
-            }
+            assert readN == syncHeader.length : track + ",seekPos:" + th(dataSeekPos);
             readN = track.data.read(header, 0, header.length);
             assert readN == header.length;
             ok = Integer.parseInt("" + holder.minute, 16) == header[0] &&
@@ -94,7 +89,7 @@ public class CdFormatChecker {
         TrackContentHelper tca = null;
         try {
             tca = TrackContentHelper.ofFile(file.toFile());
-            if (key.endsWith(".ogg")) {
+            if (key.toLowerCase().endsWith(".ogg") || key.toLowerCase().endsWith(".wav")) {
                 try (AudioInputStream ais = AudioSystem.getAudioInputStream(file.toFile());
                      AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais)) {
                     byte[] b = padToCdSector(dataIn.readAllBytes());

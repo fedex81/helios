@@ -100,7 +100,7 @@ public class CdModel {
         public final TrackContentHelper data;
         public TrackDataType trackDataType;
         public int absoluteSectorStart, absoluteSectorEnd, lenBytes, trackLenSectors;
-
+        public int fileByteOffset, indexOneSectorStart;
         public CueFileParser.MsfHolder trackEndMsf, trackStartMsf;
 
         public ExtendedTrackData(TrackData trackData, TrackContentHelper tca) {
@@ -121,6 +121,7 @@ public class CdModel {
                     .add("trackStartMsf", trackStartMsf)
                     .add("trackEndMsf", trackEndMsf)
                     .add("lenSector", trackLenSectors)
+                    .add("fileByteOffset", fileByteOffset)
                     .add("lenBytes", lenBytes)
                     .toString();
         }

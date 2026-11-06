@@ -135,13 +135,16 @@ public class ExtendedCueSheet implements Closeable {
                 assert sectorStart > 0;
             }
             CdModel.SectorSize sectorSize = extTrackData.trackDataType.size;
-            int index01_lba = getIndex01RelativeLba(trackData);
-            extTrackData.lenBytes = (int) tca.length();
+            int fileStartFrame = fileStartFrame(trackData);
+            extTrackData.fileByteOffset = fileStartFrame * sectorSize.s_size;
+            extTrackData.lenBytes = trackByteLen(trackData, tca, sectorSize.s_size, fileStartFrame);
             assert extTrackData.lenBytes > 0;
+            int index01_lba = getIndex01RelativeLba(trackData) - fileStartFrame;
             extTrackData.absoluteSectorStart = sectorStart;
             extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
             extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
             int startLba = trackNumber > 1 ? extTrackData.absoluteSectorStart + index01_lba : extTrackData.absoluteSectorStart;
+            extTrackData.indexOneSectorStart = startLba;
             CueFileParser.lbaToMsfAdjustPregap(startLba, extTrackData.trackStartMsf);
             CueFileParser.lbaToMsfAdjustPregap(extTrackData.absoluteSectorEnd, extTrackData.trackEndMsf);
 
@@ -155,6 +158,40 @@ public class ExtendedCueSheet implements Closeable {
             }
         } catch (Exception e) {
             LOG.error("Unable to parse track: {}", trackNumber, e);
+        }
+    }
+
+    private static int fileStartFrame(TrackData trackData) {
+        List<TrackData> l = trackData.getParent().getTrackData();
+        if (l.getFirst().getNumber() == trackData.getNumber()) {
+            return 0;
+        }
+        Index first = trackData.getFirstIndex();
+        return first != null ? first.getPosition().getTotalFrames() : 0;
+    }
+
+    private static int trackByteLen(TrackData trackData, TrackContentHelper tca, int sectorSize, int fileStartFrame) {
+        List<TrackData> l = trackData.getParent().getTrackData();
+        try {
+            int len = (int) tca.length();
+            if (l.size() <= 1) {
+                return len;
+            }
+            int idx = -1;
+            for (int i = 0; i < l.size(); i++) {
+                if (l.get(i).getNumber() == trackData.getNumber()) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx == l.size() - 1) {
+                return len - fileStartFrame * sectorSize;
+            }
+            int nextStartFrame = fileStartFrame(l.get(idx + 1));
+            return (nextStartFrame - fileStartFrame) * sectorSize;
+        } catch (Exception e) {
+            LOG.error("Unable to size track {}", trackData.getNumber(), e);
+            return 0;
         }
     }
 

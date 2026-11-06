@@ -529,7 +529,7 @@ public class CddImplNew implements Cdd {
                 case RelativeTime -> {
                     CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                     /* current track relative time */
-                    int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                    int lba = Math.abs(cddContext.io.sector - etd.indexOneSectorStart);
                     CueFileParser.lbaToMsf(lba, msfHolder);
                     updateStatusesMsf(cddContext.commandRegs[1], getFlags(), msfHolder);
                 }
@@ -574,7 +574,7 @@ public class CddImplNew implements Cdd {
                 //relative time in LEAD_OUT, track number becomes 0xAA and relative time keeps
                 //increasing from the last track. Thunder Storm FX (Japan)
                 int refSector = cddContext.io.track == LEADOUTNUM ? extCueSheet.sectorEnd :
-                        ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).absoluteSectorStart;
+                        ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).indexOneSectorStart;
 
                 /* current track relative time */
                 int lba = Math.abs(cddContext.io.sector - refSector);
@@ -673,7 +673,7 @@ public class CddImplNew implements Cdd {
                 //if trackRelSector < 0, silence
                 if (trackRelSector >= 0) {
                     try {
-                        data.seek((sectorSize * trackRelSector) + cddContext.io.sample);
+                        data.seek(etd.fileByteOffset + (sectorSize * trackRelSector) + cddContext.io.sample);
                         left = data.readShortLE();
                         right = data.readShortLE();
                     } catch (Exception e) {
