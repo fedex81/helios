@@ -49,6 +49,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.util.SoundUtil.millis2bytes;
+
 public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogHelper.getLogger(AbstractSoundManager.class.getSimpleName());
     private static final int OUTPUT_SAMPLE_SIZE = 16;
@@ -67,7 +69,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected ExecutorService executorService;
     protected volatile Map<SoundDeviceType, SoundDevice> soundDeviceMap, activeSoundDeviceMap;
     protected SoundPersister soundPersister;
-    protected int fmSize, psgSize;
+    protected int fmSize;
 
     protected SourceDataLine dataLine;
     protected boolean soundEnabled = true;
@@ -96,8 +98,9 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundDeviceMap = ImmutableMap.copyOf(activeSoundDeviceMap);
         updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
-        psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
+        //4 bytes/frame, but we use 16 bit samples so only 2 bytes/frame
+        //TODO check and fix: setting this to 20 or less breaks downstream buffers
+        fmSize = (int) millis2bytes(audioFormat, 50);
         init();
     }
 

@@ -23,10 +23,7 @@ import omegadrive.SystemLoader;
 import omegadrive.sound.AdaptiveAudioBuffer;
 import omegadrive.sound.SoundDevice.SoundDeviceType;
 import omegadrive.system.perf.Telemetry;
-import omegadrive.util.CircularQueue;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.SoundUtil;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -65,9 +62,9 @@ public class JavaSoundManager extends AbstractSoundManager {
         deviceAudioBuffers.put(PWM, new int[fmSize]);
         deviceAudioBuffers.put(PCM, new int[fmSize]);
         deviceAudioBuffers.put(CDDA, new int[fmSize]);
-        mix_buf_bytes16Stereo = new byte[fmSize << 1];
-        playBufBytes16Stereo = new byte[fmSize << 1];
-        psg_buf_bytes = new byte[psgSize];
+        mix_buf_bytes16Stereo = new byte[fmSize];
+        playBufBytes16Stereo = new byte[fmSize];
+        psg_buf_bytes = new byte[fmSize >> 1];
         telemetry = Telemetry.getInstance();
         bufferLenMono16 = (int) (audioFormat.getSampleRate() / region.getFps());
         adaptiveAudioBuffer = new AdaptiveAudioBuffer(bufferLenMono16, new CircularQueue(8));
@@ -76,32 +73,34 @@ public class JavaSoundManager extends AbstractSoundManager {
     private final StringBuilder sb = new StringBuilder();
 
     private int playOnceStereo(int bufferLenMono) {
-        int numSamples = bufferLenMono;
         sb.setLength(0);
+        int actualMono;
         if (isEnabled(FM)) {
-            int actual = getFm().updateStereo16(deviceAudioBuffers.get(FM), 0, bufferLenMono) >> 1;
-            checkSamples(sb, FM, bufferLenMono, actual);
+            actualMono = getFm().updateStereo16(deviceAudioBuffers.get(FM), 0, bufferLenMono) >> 1;
+            checkSamples(sb, FM, bufferLenMono, actualMono);
             //TODO FM should be stretched as well
 //            bufferLenMono = fmMonoActual;
         }
         if (isEnabled(PWM)) {
-            int actual = getPwm().updateStereo16(deviceAudioBuffers.get(PWM), 0, bufferLenMono) >> 1;
-            checkSamples(sb, PWM, bufferLenMono, actual);
+            actualMono = getPwm().updateStereo16(deviceAudioBuffers.get(PWM), 0, bufferLenMono) >> 1;
+            checkSamples(sb, PWM, bufferLenMono, actualMono);
         }
         if (isEnabled(PCM)) {
-            int actual = getPcm().updateStereo16(deviceAudioBuffers.get(PCM), 0, bufferLenMono) >> 1;
-            checkSamples(sb, PCM, bufferLenMono, actual);
+            actualMono = getPcm().updateStereo16(deviceAudioBuffers.get(PCM), 0, bufferLenMono) >> 1;
+            //PCM often generates actual-1 samples
+            actualMono = fixOffByOneMaybe(actualMono, bufferLenMono);
+            checkSamples(sb, PCM, bufferLenMono, actualMono);
         }
         if (isEnabled(CDDA)) {
-            int actual = getCdda().updateStereo16(deviceAudioBuffers.get(CDDA), 0, bufferLenMono) >> 1;
-            checkSamples(sb, CDDA, bufferLenMono, actual);
+            actualMono = getCdda().updateStereo16(deviceAudioBuffers.get(CDDA), 0, bufferLenMono) >> 1;
+            checkSamples(sb, CDDA, bufferLenMono, actualMono);
         }
         if (isEnabled(PSG)) {
             getPsg().fillBuffer(psg_buf_bytes, 0, bufferLenMono);
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
 //            LOG.warn("Audio samples mismatch, ref: {}, " + sb, numSamples);
-            LogHelper.logWarnOnce(LOG, "Audio samples mismatch, ref: {}" + sb, numSamples); //TODO fix PCM
+            LogHelper.logWarnOnce(LOG, "Audio samples mismatch, ref: {}" + sb, bufferLenMono);
         }
         final int bufferLenStereo = bufferLenMono << 1;
         /**
@@ -134,6 +133,15 @@ public class JavaSoundManager extends AbstractSoundManager {
         }
     }
 
+    private int fixOffByOneMaybe(int actualMono, int expectedMono) {
+        if (actualMono == expectedMono - 1) {
+            SoundFilterUtil.insertAverageAtEndMinusOneInPlace(deviceAudioBuffers.get(PCM), actualMono << 1);
+            LogHelper.logWarnOnce(LOG, "Corrected: Audio samples mismatch, ref: {} PCM: {}", expectedMono, actualMono);
+            actualMono = expectedMono;
+        }
+        return actualMono;
+    }
+
     private void clearData() {
         if (isEnabled(FM)) Arrays.fill(deviceAudioBuffers.get(FM), 0);
         if (isEnabled(PWM)) Arrays.fill(deviceAudioBuffers.get(PWM), 0);
@@ -151,7 +159,7 @@ public class JavaSoundManager extends AbstractSoundManager {
         getFm().onNewFrame();
         playOnceStereo(bufferLenMono16);
         final int frameId = sync.incrementAndGet();
-        executorService.submit(() -> {
+        executorService.submit(Util.wrapRunnableEx(() -> {
             int nowFrameId = sync.get();
             audioFrameDelay = nowFrameId - frameId;
             if (audioFrameDelay != latestDiff) {
@@ -161,7 +169,7 @@ public class JavaSoundManager extends AbstractSoundManager {
             }
             int num = adaptiveAudioBuffer.read(playBufBytes16Stereo, playBufBytes16Stereo.length);
             SoundUtil.writeBufferInternal(dataLine, playBufBytes16Stereo, num);
-        });
+        }));
     }
 
     private void doStats() {

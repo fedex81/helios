@@ -202,6 +202,21 @@ public class SoundFilterUtil {
         h.lastLpfR = lastLpfR;
     }
 
+    /**
+     * Expands the audio frame from N-1 to N samples in-place within the same array.
+     * s1l = N-3 (1465)
+     * s1r = N-2 (1466)
+     * s2l = N-1 (1467)
+     * s2R = N (1468)
+     */
+    public static void insertAverageAtEndMinusOneInPlace(int[] buffer, int len) {
+        assert buffer.length >= len + 2;
+        buffer[len + 1] = buffer[len - 1];
+        buffer[len] = buffer[len - 2];
+        buffer[len - 1] = (buffer[len - 1] + buffer[len - 3]) >> 1;
+        buffer[len - 2] = (buffer[len - 2] + buffer[len - 4]) >> 1;
+    }
+
     public static class FilterProcessingData {
         public int[] rawBuffer = new int[0];
         public int[] interpBuffer = new int[0];

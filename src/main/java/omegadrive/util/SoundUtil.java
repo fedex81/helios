@@ -94,7 +94,7 @@ public class SoundUtil {
      * gets the number of bytes needed to play the specified number of milliseconds
      * @see com.sun.media.sound.Toolkit
      */
-    private static long millis2bytes(AudioFormat format, long millis) {
+    public static long millis2bytes(AudioFormat format, long millis) {
         long result = (long) (millis * format.getFrameRate() / 1000.0f * format.getFrameSize());
         return align(result, format.getFrameSize());
     }
