@@ -256,7 +256,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             res = read32xWord((address & S32xDict.M68K_MASK_32X_COLPAL) | S32xDict.SH2_COLPAL_32X_OFFSET, size);
         } else if (address >= S32xDict.M68K_START_MARS_ID && address < S32xDict.M68K_END_MARS_ID) {
             assert address == S32xDict.M68K_START_MARS_ID;
-            res = 0x4d415253; //'MARS'
+            res = MARS_HEX;
         } else {
             if (!DmaFifo68k.rv && address <= DEFAULT_ROM_END_ADDRESS) {
                 logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
@@ -277,7 +277,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
     private int readAdapterEnOff(int address, Size size) {
         int res = 0;
         if (address >= S32xDict.M68K_START_MARS_ID && address < S32xDict.M68K_END_MARS_ID) {
-            res = 0x4d415253; //'MARS'
+            res = MARS_HEX;
         } else if (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_SYSREG) {
             res = read32xWord((address & S32xDict.M68K_MASK_32X_SYSREG) | S32xDict.SH2_SYSREG_32X_OFFSET, size);
         } else if (address >= S32xDict.M68K_START_32X_VDPREG && address < S32xDict.M68K_END_32X_VDPREG) {

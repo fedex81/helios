@@ -205,7 +205,7 @@ public class ExtendedCueSheet implements Closeable {
 
     private static TrackContentHelper getDataFile(ExtendedCueSheet extCueSheet, String key, Path file, Path cuePath) {
         if (!extCueSheet.fileCache.containsKey(key)) {
-            extCueSheet.fileCache.put(key, CdFormatChecker.decompressContent(key, file));
+            extCueSheet.fileCache.computeIfAbsent(key, k -> CdFormatChecker.decompressContent(k, file));
         }
         return extCueSheet.fileCache.get(key);
     }

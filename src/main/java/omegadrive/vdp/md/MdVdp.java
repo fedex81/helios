@@ -19,7 +19,6 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;
@@ -30,7 +29,6 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
 import static omegadrive.util.LogHelper.logWarnOnce;
@@ -212,8 +210,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     private int lastHCounter = 0;
 
     private void setupVdp() {
-        //NOTE avoid a CMExc that only triggers when testing
-        this.list = SystemLoader.testMode ? new CopyOnWriteArrayList<>() : new ArrayList<>();
+        this.list = new ArrayList<>();
         list.add(this);
         this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);

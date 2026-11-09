@@ -184,11 +184,11 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     sh2MMREGS[cpuAccess.ordinal()].writeDramMode(address & 0xFFFF, val, size);
                 } else {
-                    logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
+                    logInvalidAccess(cpuAccess, address, size);
                 }
                 break;
             default:
-                logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
+                logInvalidAccess(cpuAccess, address, size);
                 break;
         }
         if (hasMemoryChanged) {
@@ -227,7 +227,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     s32XMMREG.write(address, val, size);
                 }
             }
-            default -> logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
+            default -> logInvalidAccess(cpuAccess, address, size);
         }
         if (memDelay > 0) {
             S32xMemAccessDelay.addWriteCpuDelay(memDelay);
@@ -255,6 +255,11 @@ public final class Sh2BusImpl implements Sh2Bus {
             }
         }
     }
+
+    private void logInvalidAccess(CpuDeviceAccess c, int address, Size size) {
+        logWarnOnce(LOG, "{} invalid write to addr: {}_XXX_XXX {}", c, th(address >> 24), size);
+    }
+
 
 
     @Override

@@ -313,8 +313,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             sound.reset();
             bus.closeRom();
             telemetry.reset();
-            Optional.ofNullable(vdp).ifPresent(Device::reset);
             cycleCounter = 1;
+        } else {
+            //make sure the vdp is not running when doing this
+            Optional.ofNullable(vdp).ifPresent(Device::reset);
             MdRuntimeData.releaseInstance();
         }
     }

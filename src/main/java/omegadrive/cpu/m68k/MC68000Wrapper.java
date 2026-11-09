@@ -31,6 +31,7 @@ import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
+import s32x.sh2.Sh2Helper;
 
 import static m68k.cpu.Cpu.AUTO_VECTOR_EXCEPTION_OFFSET;
 import static m68k.cpu.Cpu.PC_MASK;
@@ -58,8 +59,8 @@ public class MC68000Wrapper implements M68kProvider {
 
     protected M68kLoopHelper loopHelper;
 
-    private static final boolean M68K_POLL_EN = false; //Boolean.parseBoolean(System.getProperty("helios.m68k.poll.detect",
-//            "" + Sh2Helper.Sh2Config.get().m68kLoopDetect));
+    private static final boolean M68K_POLL_EN = Boolean.parseBoolean(System.getProperty("helios.m68k.poll.detect",
+            "" + Sh2Helper.Sh2Config.get().m68kLoopDetect));
 
     private static final CpuConfig tasBrokenConfig = CpuConfig.DEFAULT_CONFIG.withBrokenTas(true);
 

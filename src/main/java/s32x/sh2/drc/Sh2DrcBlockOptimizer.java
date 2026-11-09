@@ -12,7 +12,6 @@ import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Debug;
-import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.Sh2Helper;
 
 import java.util.Arrays;
@@ -21,6 +20,7 @@ import java.util.StringJoiner;
 import java.util.function.Predicate;
 
 import static omegadrive.util.Util.th;
+import static s32x.sh2.Sh2Disassembler.NOP;
 import static s32x.sh2.Sh2Impl.RM;
 import static s32x.sh2.Sh2Impl.RN;
 import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.*;
@@ -137,7 +137,7 @@ public class Sh2DrcBlockOptimizer {
             int memLoads = 0, numNops = 0, numRegOnly = 0, pollInstLen = 0;
             for (int i = 0; i < words.length; i++) {
                 final int opcode = words[i];
-                numNops += opcode == Sh2Disassembler.NOP ? 1 : 0;
+                numNops += opcode == NOP ? 1 : 0;
                 numRegOnly += isRegOnlyOpcode.test(opcode) ? 1 : 0;
                 if (isMemLoadOpcode.test(opcode)) {
                     memLoadPos = i;
@@ -190,6 +190,30 @@ public class Sh2DrcBlockOptimizer {
                 LOG.warn("Busy Loop?\n{}\n{}\n{}", Sh2Helper.toListOfInst(block), block, this);
                 isPoller = false;
                 isBusyLoop = true;
+            }
+//            checkDelayLoop();
+        }
+
+
+        private void checkDelayLoop() {
+            int dtPos = -1;
+            int branchPos = -1;
+            for (int i = 0; i < words.length; i++) {
+                if ((words[i] & 0xF0FF) == 0x4010) {  //dt Rn
+                    dtPos = i;
+                }
+                if ((words[i] & 0xFF00) == 0x8900) {//bt
+                    branchPos = i;
+                }
+            }
+            if (dtPos >= 0 && branchPos >= 0) {
+                branchDestPc = getBranchDestination(branchOpcode, branchPc);
+                int branchRelDest = branchDestPc - pc;
+                int dtPc = pc + dtPos;
+                boolean delayLoop = branchDestPc == dtPc || (branchRelDest >= 0 && branchRelDest < words.length && words[branchRelDest] == NOP);
+                if (delayLoop) {
+                    LOG.error("Delay Loop?\n{}\n{}\n{}", Sh2Helper.toListOfInst(block), block, this);
+                }
             }
         }
 
@@ -455,7 +479,7 @@ public class Sh2DrcBlockOptimizer {
         }
     }
 
-    public final static void handlePoll(Sh2Block block) {
+    public static void handlePoll(Sh2Block block) {
         final BufferUtil.CpuDeviceAccess cpu = block.getCpu();
         if (!block.isPollingBlock()) {
             final PollerCtx current = PollSysEventManager.instance.getPoller(cpu);

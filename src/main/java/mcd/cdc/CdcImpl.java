@@ -500,15 +500,6 @@ public class CdcImpl implements Cdc {
                 } else {
                     LogHelper.logWarnOnce(LOG, "Attempting to decode LEADOUT, track {}, MSF {} ", th(track), msfHolder);
                 }
-//                if (cdcContext.header.mode == 0x01) {
-//                    assert etd.trackDataType != CdModel.TrackDataType.AUDIO;
-//                    /* write Mode 1 user data to RAM buffer (2048 bytes) */
-//                    cdd_read_data(sector, offset, etd);
-//                } else {
-//                    assert etd.trackDataType == CdModel.TrackDataType.AUDIO;
-//                    assert false : "TODO read audio data";
-//                    //NOTE cdda play
-//                }
             }
         }
     }

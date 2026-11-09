@@ -81,7 +81,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             if (t.ready == 0) return 0xFFFF;
         }
         int data = ram.getShort(t.source);
-        if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+        if (verbose) LOG.info("CDC,RAM_R,ram[{}]={},len={}", th(t.source), th(data), t.length);
         t.source = (t.source + 2) & 0x3FFF;
         t.length -= 2;
         if (t.length <= 0) {

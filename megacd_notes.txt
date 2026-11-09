@@ -1,7 +1,5 @@
 singleBinMultiTrack
 - kobo 32x
-
-- Cdd.test01
 - de-emphasis
 
 14: BattleTech - Gray Death Legion (USA) (Unl).cue
@@ -53,6 +51,7 @@ Arslan Senki JP - 1st screen after BIOS
 Daihou.. JP
 Earnest Evans
 Jangou world cup
+Star Wars
 
 //MEGACD MODE1
 2026-10-15 07:17:52.113 ERROR [cycle-Pier Solar and the Great Architects Enhanced Soundtrack Disc (USA).cue]

@@ -21,7 +21,6 @@ package s32x;
 
 import omegadrive.SystemLoader;
 import omegadrive.system.MediaSpecHolder;
-import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
@@ -62,7 +61,7 @@ public class S32xAutomatedGameTester {
     private static List<String> blackList = FileUtil.readFileContent(blacklistPath);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
-            Arrays.stream(SysUtil.binaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(new String[]{".32x"}).anyMatch(p.toString()::endsWith);
 
     static {
         System.setProperty("helios.headless", "true");

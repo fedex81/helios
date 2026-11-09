@@ -89,10 +89,7 @@ public class McdWordRamHelper {
         if (cpu == memoryContext.wramSetup.cpu || memoryContext.wramSetup.mode == _1M) {
             writeWordRamBank(getBank(memoryContext.wramSetup, cpu, address), address, value);
         } else {
-            //TODO BatmanReturns ASIC writes here
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, memoryContext.wramSetup);
-//            LOG.info("WRAM DIAG {} WRITE MISMATCH at {} val {} but setup is {}", cpu, th(address), th(value), memoryContext.wramSetup);
-//            assert false;
         }
     }
 
@@ -101,9 +98,7 @@ public class McdWordRamHelper {
         if (cpu == memoryContext.wramSetup.cpu || memoryContext.wramSetup.mode == _1M) {
             return readWordRamBank(getBank(memoryContext.wramSetup, cpu, address), address);
         } else {
-            //TODO BatmanReturns, ASIC reads from here
             logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, memoryContext.wramSetup);
-//            LOG.info("WRAM DIAG {} READ MISMATCH at {} but setup is {} -> returns FFFF", cpu, th(address), memoryContext.wramSetup);
             return Size.WORD.getMask();
         }
     }
@@ -324,30 +319,6 @@ public class McdWordRamHelper {
         }
     }
 
-
-//    private void writeRegLowByteGpgx(int reg1){
-//        setSharedBitBothCpu(memoryContext, RET, reg1);
-//        setSharedBitBothCpu(memoryContext, DMNA, reg1);
-//        setSharedBitBothCpu(memoryContext, MODE, reg1);
-//        setBitDefInternal(memoryContext, SUB_M68K, PM0, reg1);
-//        setBitDefInternal(memoryContext, SUB_M68K, PM1, reg1);
-//        setBitDefInternal(memoryContext, M68K, BK0, reg1);
-//        setBitDefInternal(memoryContext, M68K, BK1, reg1);
-//    }
-//
-//    private void deriveWramSetupGpgx(int reg1){
-//        if((reg1 & MODE.getBitMask()) != 0){
-//            memoryContext.wramSetup = (reg1 & RET.getBitMask()) != 0 ? W_1M_WR0_SUB : W_1M_WR0_MAIN;
-//        } else {
-//            memoryContext.wramSetup = gpgxDmna == 0 ? W_2M_MAIN : W_2M_SUB;
-//        }
-//    }
-//
-//    private void finishGpgx(CpuDeviceAccess c, WramSetup prev){
-//        if(prev != memoryContext.wramSetup){
-//            LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, memoryContext.wramSetup);
-//        }
-//    }
 
     private void updateWriteProtect(int wpVal) {
         writeBufferRaw(memoryContext.getGateSysRegs(M68K), MCD_MEM_MODE.addr, wpVal, Size.BYTE);

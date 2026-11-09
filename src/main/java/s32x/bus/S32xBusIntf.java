@@ -13,6 +13,9 @@ import java.nio.ByteBuffer;
  * Copyright 2025
  */
 public interface S32xBusIntf extends MdMainBusProvider, Sh2Bus.MdRomAccess {
+
+    int MARS_HEX = 0x4d415253; //'MARS'
+
     void setBios68k(BiosHolder.BiosData biosData);
 
     void setRom(ByteBuffer rom);
