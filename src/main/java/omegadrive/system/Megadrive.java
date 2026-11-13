@@ -34,7 +34,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.SoundDevice.SoundDeviceType;
-import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
+import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -71,7 +71,11 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
 
     private static final int FAST_FM_DIV = 128;
     private static final int FAST_FM_DIV_MASK = FAST_FM_DIV - 1;
-    private boolean isNuke;
+    private static final int YMFM_CLOCKS_PER_SAMPLE = 24;
+    private static final int YMFM_FM_DIVIDER = FM_DIVIDER * YMFM_CLOCKS_PER_SAMPLE;
+
+    private MdFmProvider.FmCore fmCore = MdFmProvider.FmCore.NUKE;
+    private int fmDivider = FM_DIVIDER;
 
     static {
         BufferUtil.assertPowerOf2Minus1("FAST_FM_DIV_MASK", FAST_FM_DIV_MASK);
@@ -129,7 +133,9 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         memView.reset();
         memView = createMemView();
         fm = sound.getFm();
-        isNuke = fm instanceof Ym2612Nuke;
+        fmCore = ((MdFmProvider) fm).getFmCore();
+        fmDivider = fmCore == MdFmProvider.FmCore.YMFM ? YMFM_FM_DIVIDER : FM_DIVIDER;
+        nextFmCycle = fmDivider;
     }
 
     protected void loop() {
@@ -190,16 +196,17 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     }
 
     protected final void runSound() {
-        if (isNuke) {
             if (--nextFmCycle == 0) {
                 fm.step();
-                nextFmCycle = FM_DIVIDER;
+                nextFmCycle = fmDivider;
             }
-        } else {
-            if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
-                fm.step();
-            }
-        }
+
+        //TODO Fast fm remove
+//        } else {
+//            if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
+//                fm.step();
+//            }
+//        }
     }
 
     protected final void runSvp() {
@@ -224,7 +231,10 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     @Override
     protected void updateSoundRate(RegionDetector.Region region) {
         double microsPerTick = getMicrosPerTick();
-        microsPerTick = !isNuke ? microsPerTick * FAST_FM_DIV / FM_DIVIDER : microsPerTick;
+        microsPerTick *= switch (fmCore) {
+            case YMFM -> YMFM_CLOCKS_PER_SAMPLE;
+            case NUKE -> 1.0;
+        };
         sound.getFm().setMicrosPerTick(microsPerTick);
         targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
         sound.updateDeviceRate(SoundDeviceType.PSG, region,

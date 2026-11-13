@@ -174,6 +174,11 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         return state;
     }
 
+    @Override
+    public FmCore getFmCore() {
+        return FmCore.NUKE;
+    }
+
     public static class Ym3438Context implements Serializable {
 
         @Serial

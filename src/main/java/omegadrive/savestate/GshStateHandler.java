@@ -28,6 +28,7 @@ import omegadrive.cpu.ssp16.Ssp16Types;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
+import omegadrive.sound.fm.ym2612.ymfm.Ym2612Ymfm;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String MAGIC_WORD = "GSH";
     protected static final String MAGIC_WORD_GST = "GST";
     protected static final String FM_MAGIC_WORD_NUKE = "NUKE";
+    protected static final String FM_MAGIC_WORD_YMFM = "YMFMAG";
     protected static final String SVP_MAGIC_WORD = "SVP0";
     protected static final String fileExtension = "gsh";
 
@@ -98,10 +100,19 @@ public class GshStateHandler extends GstStateHandler {
     public void loadFmState(FmProvider fm) {
         byte[] ba = buffer.array();
         int fmNukeStart = Bytes.indexOf(ba, FM_MAGIC_WORD_NUKE.getBytes());
+        int fmYmfmStart = Bytes.indexOf(ba, FM_MAGIC_WORD_YMFM.getBytes());
         if (fmNukeStart > -1 && fm instanceof Ym2612Nuke nukeFm) {
             Optional<Serializable> res = StateUtil.loadSerializedData(FM_MAGIC_WORD_NUKE, fmNukeStart, ba);
             res.ifPresent(ser -> nukeFm.setState((Ym2612Nuke.Ym3438Context) ser));
+        } else if (fmYmfmStart > -1 && fm instanceof Ym2612Ymfm ymfm) {
+            Optional<byte[]> res = StateUtil.loadRawData(FM_MAGIC_WORD_YMFM, fmYmfmStart, ba);
+            res.ifPresent(ymfm::setStateBytes);
         } else {
+            boolean crossCore = fmNukeStart > -1 || fmYmfmStart > -1;
+            LOG.warn("FM state restored from registers only ({}), active core: {}",
+                    crossCore ? "cross-core save, internal state not transferable" : "register only savestate",
+                    fm.getClass().getSimpleName());
+            if (crossCore) fm.reset();
             //loading a gs0, ie. registers only
             super.loadFmState(fm); //load FM registers
         }
@@ -119,9 +130,11 @@ public class GshStateHandler extends GstStateHandler {
     @Override
     public void saveFm(FmProvider fm) {
         super.saveFm(fm); //save FM registers, back-compat
-        if (fm instanceof Ym2612Nuke) {
-            Ym2612Nuke.Ym3438Context chip = ((Ym2612Nuke) fm).getState();
+        if (fm instanceof Ym2612Nuke nuke) {
+            Ym2612Nuke.Ym3438Context chip = nuke.getState();
             buffer = StateUtil.storeSerializedData(FM_MAGIC_WORD_NUKE, chip, buffer);
+        } else if (fm instanceof Ym2612Ymfm ymfm) {
+            buffer = StateUtil.storeRawData(FM_MAGIC_WORD_YMFM, ymfm.getStateBytes(), buffer);
         }
     }
 

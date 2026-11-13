@@ -173,22 +173,7 @@ public class StateUtil {
 
     public static ByteBuffer storeSerializedData(String magicWordStart, String magicWordEnd, Serializable object,
                                                  ByteBuffer buffer) {
-        int prevPos = buffer.position();
-        int len = magicWordStart.length() + magicWordEnd.length();
-        byte[] data = Util.serializeObject(object);
-        buffer = extendBuffer(buffer, data.length + len);
-
-        try {
-            buffer.put(magicWordStart.getBytes());
-            buffer.put(data);
-            buffer.put(magicWordEnd.getBytes());
-        } catch (Exception var10) {
-            LOG.error("Unable to save {} data", magicWordStart);
-        } finally {
-            buffer.position(prevPos);
-        }
-
-        return buffer;
+        return storeRawData(magicWordStart, magicWordEnd, Util.serializeObject(object), buffer);
     }
 
     private static int getNextPosForPattern(byte[] buf, int startPos, String pattern) {
@@ -240,5 +225,33 @@ public class StateUtil {
         return Util.getDeviceIfAny(deviceList, clazz).orElseThrow(() ->
                 new RuntimeException("Unable to find an instance of class: " + clazz + ", from list: " +
                         Arrays.toString(deviceList.toArray())));
+    }
+
+    public static Optional<byte[]> loadRawData(String magicWord, int dataStart, byte[] data) {
+        dataStart += magicWord.length();
+        int dataEnd = getNextPosForPattern(data, dataStart, magicWord);
+        if (dataEnd <= dataStart) {
+            return Optional.empty();
+        }
+        return Optional.of(Arrays.copyOfRange(data, dataStart, dataEnd));
+    }
+
+    public static ByteBuffer storeRawData(String magicWord, byte[] data, ByteBuffer buffer) {
+        return storeRawData(magicWord, magicWord, data, buffer);
+    }
+
+    public static ByteBuffer storeRawData(String magicWordStart, String magicWordEnd, byte[] data, ByteBuffer buffer) {
+        int prevPos = buffer.position();
+        buffer = extendBuffer(buffer, data.length + magicWordStart.length() + magicWordEnd.length());
+        try {
+            buffer.put(magicWordStart.getBytes());
+            buffer.put(data);
+            buffer.put(magicWordEnd.getBytes());
+        } catch (Exception e) {
+            LOG.error("Unable to save {} data", magicWordStart);
+        } finally {
+            buffer.position(prevPos);
+        }
+        return buffer;
     }
 }
