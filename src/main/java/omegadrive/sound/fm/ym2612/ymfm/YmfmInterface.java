@@ -12,12 +12,16 @@ public class YmfmInterface {
     protected YmfmEngineCallbacks m_engine;
 
     private final long[] m_timerCount = {-1, -1};
+    private int m_busyCount = 0;
 
     public void setEngine(YmfmEngineCallbacks engine) {
         m_engine = engine;
     }
 
     public void tickTimers(int clocks) {
+        if (m_busyCount > 0) {
+            m_busyCount = Math.max(0, m_busyCount - clocks);
+        }
         for (int tnum = 0; tnum < 2; tnum++) {
             if (m_timerCount[tnum] < 0) {
                 continue;
@@ -48,19 +52,24 @@ public class YmfmInterface {
     }
 
     public void ymfmSetBusyEnd(int clocks) {
+        if (m_busyCount <= 0)
+            m_busyCount = clocks;
     }
 
     public boolean ymfmIsBusy() {
-        return false;
+        return m_busyCount > 0;
     }
 
     public void ymfmUpdateIrq(boolean asserted) {
+        //unused
     }
 
     public int ymfmExternalRead(int type, int address) {
+        //unused
         return 0;
     }
 
     public void ymfmExternalWrite(int type, int address, int data) {
+        //unused
     }
 }

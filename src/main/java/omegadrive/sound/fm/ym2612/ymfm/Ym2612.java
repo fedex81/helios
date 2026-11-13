@@ -17,6 +17,8 @@ public class Ym2612 {
     protected int m_dacData;
     protected int m_dacEnable;
     protected final FmEngine m_fm;
+    private final YmfmOutput m_temp = new YmfmOutput();
+    private final YmfmOutput[] m_single = new YmfmOutput[1];
 
     public Ym2612(YmfmInterface intf) {
         m_address = 0;
@@ -120,7 +122,7 @@ public class Ym2612 {
     }
 
     public void generate(YmfmOutput[] output, int outOffset, int numsamples) {
-        YmfmOutput temp = new YmfmOutput();
+        YmfmOutput temp = m_temp;
         for (int samp = 0; samp < numsamples; samp++) {
             YmfmOutput out = output[outOffset + samp];
             m_fm.clock(FmEngine.ALL_CHANNELS);
@@ -147,8 +149,8 @@ public class Ym2612 {
 
 
     public void generate(YmfmOutput output) {
-        YmfmOutput[] arr = {output};
-        generate(arr, 0, 1);
+        m_single[0] = output;
+        generate(m_single, 0, 1);
     }
 }
 

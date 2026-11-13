@@ -74,8 +74,8 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     private static final int YMFM_CLOCKS_PER_SAMPLE = 24;
     private static final int YMFM_FM_DIVIDER = FM_DIVIDER * YMFM_CLOCKS_PER_SAMPLE;
 
-    private MdFmProvider.FmCore fmCore = MdFmProvider.FmCore.NUKE;
-    private int fmDivider = FM_DIVIDER;
+    private MdFmProvider.FmCore fmCore = MdFmProvider.FmCore.YMFM;
+    private int fmDivider = YMFM_FM_DIVIDER;
 
     static {
         BufferUtil.assertPowerOf2Minus1("FAST_FM_DIV_MASK", FAST_FM_DIV_MASK);
@@ -133,8 +133,11 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         memView.reset();
         memView = createMemView();
         fm = sound.getFm();
-        fmCore = ((MdFmProvider) fm).getFmCore();
-        fmDivider = fmCore == MdFmProvider.FmCore.YMFM ? YMFM_FM_DIVIDER : FM_DIVIDER;
+        //TODO breaks when fm = NO_SOUND
+        if (fm instanceof MdFmProvider mdfm) {
+            fmCore = mdfm.getFmCore();
+            fmDivider = fmCore == MdFmProvider.FmCore.YMFM ? YMFM_FM_DIVIDER : FM_DIVIDER;
+        }
         nextFmCycle = fmDivider;
     }
 

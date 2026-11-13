@@ -20,6 +20,7 @@ public class FmChannel {
     private final FmOperator[] m_op = new FmOperator[4];
     private final OpnaRegisters m_regs;
     private final FmEngine m_owner;
+    private final short[] opout = new short[8];
 
     public FmChannel(FmEngine engine, int choffs) {
         m_choffs = choffs;
@@ -149,7 +150,6 @@ public class FmChannel {
 
         int algorithmOps = S_ALGORITHM_OPS[m_regs.chAlgorithm(m_choffs)];
 
-        short[] opout = new short[8];
         opout[0] = 0;
         opout[1] = (short) op1value;
 

@@ -36,6 +36,7 @@ public interface MdFmProvider extends FmProvider {
     int FM_ADDRESS_PORT1 = 2;
     int FM_DATA_PORT0 = 1;
     int FM_DATA_PORT1 = 3;
+    int FM_STATUS_BUSY_BIT_MASK = 0x80;
 
     FmCore getFmCore();
 
