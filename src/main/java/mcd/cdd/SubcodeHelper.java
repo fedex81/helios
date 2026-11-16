@@ -1,12 +1,10 @@
 package mcd.cdd;
 
 import mcd.dict.MegaCdMemoryContext;
-import omegadrive.util.HexUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -26,7 +24,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2026
  */
-public class SubcodeHelper {
+public class SubcodeHelper implements Closeable {
 
     /**
      * sector has 98 frames
@@ -286,7 +284,10 @@ public class SubcodeHelper {
         }
     }
 
-
+    @Override
+    public void close() throws IOException {
+        ZipUtil.closeQuietly(subcodeFile);
+    }
 
     /**
      * TEST/RESEARCH stuff

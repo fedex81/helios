@@ -88,7 +88,6 @@ public class CdFormatChecker {
     public static TrackContentHelper decompressContent(String key, Path file) {
         TrackContentHelper tca = null;
         try {
-            tca = TrackContentHelper.ofFile(file.toFile());
             if (key.toLowerCase().endsWith(".ogg") || key.toLowerCase().endsWith(".wav")) {
                 try (AudioInputStream ais = AudioSystem.getAudioInputStream(file.toFile());
                      AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais)) {
@@ -101,6 +100,8 @@ public class CdFormatChecker {
                 byte[] b = ZipUtil.readGZipFileContents(file);
                 tca = TrackContentHelper.ofDataArray(b);
                 LOG.info("Done decompressing track1 ({}), took {} ms", file.getFileName(), System.currentTimeMillis() - start);
+            } else {
+                tca = TrackContentHelper.ofFile(file.toFile());
             }
         } catch (Exception e) {
             LOG.error("Unable to handle content: {}, file: {}", key, file.toAbsolutePath(), e);
