@@ -1,5 +1,7 @@
 package omegadrive.sound.fm.ym2612;
 
+import java.util.Arrays;
+
 import static omegadrive.sound.fm.MdFmProvider.FM_ADDRESS_PORT0;
 import static omegadrive.sound.fm.MdFmProvider.FM_ADDRESS_PORT1;
 
@@ -41,5 +43,11 @@ public class Ym2612RegSupport {
         if (realAddr < 0x30) {
             ym2612Reg[regPart][realAddrReg] = data;
         }
+    }
+
+    public void reset() {
+        Arrays.fill(ym2612Reg[0], 0);
+        Arrays.fill(ym2612Reg[1], 0);
+        addressLatch = 0;
     }
 }

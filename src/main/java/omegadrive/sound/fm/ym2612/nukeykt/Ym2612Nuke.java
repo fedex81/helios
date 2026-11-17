@@ -86,6 +86,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         state.reset();
         cycleAccum = 0;
         syncAudioCnt = prevL = prevR = 0;
+        regSupport.reset();
     }
 
     @Override

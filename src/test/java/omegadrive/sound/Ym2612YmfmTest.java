@@ -3,6 +3,7 @@ package omegadrive.sound;
 import omegadrive.sound.fm.ym2612.ymfm.Ym2612;
 import omegadrive.sound.fm.ym2612.ymfm.YmfmInterface;
 import omegadrive.sound.fm.ym2612.ymfm.YmfmOutput;
+import omegadrive.sound.fm.ym2612.ymfm.YmfmSavedState;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -82,5 +83,25 @@ public class Ym2612YmfmTest {
 
         int peak = generatePeak(chip, chip.sampleRate(FM_CLOCK) / 100);
         Assertions.assertTrue(peak > 0);
+    }
+
+    @Test
+    public void testRunningTimerFirstAfterStateRestore() {
+        Ym2612 chip = newChip();
+        w(chip, 0x24, 0xfa); //timerA = 1000 -> ovf after 24 samples
+        w(chip, 0x25, 0);
+        w(chip, 0x27, 0x15);
+        generatePeak(chip, 5);
+
+        YmfmSavedState save = YmfmSavedState.forSaving();
+        chip.saveRestore(save);
+        Ym2612 restored = newChip();
+        restored.saveRestore(YmfmSavedState.forRestoring(save.toByteArray()));
+        generatePeak(restored, 18); //5+18
+        //TimerA ovf should NOT be set
+        Assertions.assertEquals(0, restored.readStatus() & 1);
+        generatePeak(restored, 1); //23+1
+        //TimerA ovf should be set (24 samples)
+        Assertions.assertEquals(1, restored.readStatus() & 1);
     }
 }

@@ -29,7 +29,11 @@ public class Ym2612 {
 
 
     public void reset() {
+        m_address = 0;
+        m_dacEnable = 0;
+        m_dacData = 0;
         m_fm.reset();
+        m_fm.intf().reset();
     }
 
     public void saveRestore(YmfmSavedState state) {
@@ -37,6 +41,7 @@ public class Ym2612 {
         m_dacData = state.saveRestore16(m_dacData);
         m_dacEnable = state.saveRestore8(m_dacEnable);
         m_fm.saveRestore(state);
+        m_fm.intf().saveRestore(state);
     }
 
     public int sampleRate(int inputClock) {

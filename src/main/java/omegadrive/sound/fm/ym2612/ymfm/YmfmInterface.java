@@ -56,6 +56,10 @@ public class YmfmInterface {
             m_busyCount = clocks;
     }
 
+    public void reset() {
+        m_busyCount = 0;
+    }
+
     public boolean ymfmIsBusy() {
         return m_busyCount > 0;
     }
@@ -71,5 +75,13 @@ public class YmfmInterface {
 
     public void ymfmExternalWrite(int type, int address, int data) {
         //unused
+    }
+
+    public void saveRestore(YmfmSavedState state) {
+        for (int tnum = 0; tnum < 2; tnum++) {
+            int count = state.saveRestore32((int) m_timerCount[tnum]);
+            if (!state.saving())
+                m_timerCount[tnum] = count == 0 ? -1 : count;
+        }
     }
 }

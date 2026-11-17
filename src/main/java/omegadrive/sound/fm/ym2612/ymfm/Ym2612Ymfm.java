@@ -48,6 +48,7 @@ public class Ym2612Ymfm extends VariableSampleRateSource implements MdFmProvider
         chip.reset();
         cycleAccum = 0;
         prevL = prevR = 0;
+        regSupport.reset();
     }
 
     @Override
