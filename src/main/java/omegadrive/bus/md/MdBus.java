@@ -850,7 +850,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     //NOTE: this assumes that only 68k writes on the vpdDataPort
     private boolean checkVdpBusy(int address, Size size, int data) {
-        if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
+        boolean isDataPort = (address & 0x1f) < 4;
+        if ((isDataPort && busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL) ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
             vdpRunnable.cpu = MdRuntimeData.getAccessTypeExt();
             vdpRunnable.address = address;

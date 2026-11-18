@@ -304,6 +304,11 @@ class BusArbiterImpl implements BusArbiter {
 
     @Override
     public void runLater68k(Runnable r) {
+        if (runLater68k != null) {
+            //TODO does this ever happen?
+            LOG.error("overwriting a pending 68k access, earlier access is lost, vdp: {}", vdpBusyState);
+
+        }
         runLater68k = r;
         state68k = CpuState.HALTED;
         if (verbose) logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
